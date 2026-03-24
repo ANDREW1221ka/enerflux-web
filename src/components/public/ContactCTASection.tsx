@@ -2,14 +2,15 @@ import { NavLink } from 'react-router-dom'
 
 export function ContactCTASection() {
   return (
-    <section className="home-cta" aria-labelledby="home-cta-title">
-      <h2 id="home-cta-title">¿Evaluamos tu próximo proyecto técnico?</h2>
+    <section className="home-cta reveal reveal-up" aria-labelledby="home-cta-title">
+      <p className="home-kicker">Contacto técnico</p>
+      <h2 id="home-cta-title">¿Necesitas una solución técnica para tu instalación?</h2>
       <p>
-        Coordinamos un levantamiento inicial para definir alcance, riesgos operativos y propuesta de
-        implementación con foco en continuidad y control.
+        Conversemos sobre tu operación y definamos una propuesta de implementación eléctrica y de
+        control alineada a seguridad, disponibilidad y crecimiento.
       </p>
       <NavLink className="hero-primary-button" to="/contacto">
-        Solicitar evaluación técnica
+        Contactar
       </NavLink>
     </section>
   )
