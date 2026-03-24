@@ -1,59 +1,56 @@
-import { NavLink } from 'react-router-dom'
-
 type Project = {
-  name: string
+  title: string
   description: string
   image: string
   imageAlt: string
-  orientation: 'image-left' | 'image-right' | 'full-image'
+  orientation: 'image-left' | 'image-right'
 }
 
-const featuredProjects: Project[] = [
+const fieldProjects: Project[] = [
   {
-    name: 'Normalización de tableros principales en planta industrial',
+    title: 'Automatización de sala de bombas con PLC y variadores de frecuencia',
     description:
-      'Ingeniería y recambio de tableros de distribución con selectividad de protecciones, nueva instrumentación de potencia y pruebas FAT/SAT para continuidad operacional.',
-    image: '/images/proyecto-tablero.svg',
-    imageAlt: 'Proyecto de tableros eléctricos de distribución y control en sala técnica',
+      'Implementación de lógica de control secuencial, integración de variadores de frecuencia y optimización de operación hidráulica para mejorar estabilidad y continuidad del sistema.',
+    image: '/images/sala-bombas.jpg',
+    imageAlt: 'Sala de bombas industrial con equipos de control y variadores de frecuencia',
     orientation: 'image-left',
   },
   {
-    name: 'Automatización de sala de bombas con PLC y HMI',
+    title: 'Monitoreo remoto y telemetría para instalaciones críticas',
     description:
-      'Integración de control secuencial, variadores de frecuencia y visualización local/remota para optimizar disponibilidad hidráulica y tiempos de respuesta de operación.',
-    image: '/images/sala-bombas.svg',
-    imageAlt: 'Sala de bombas industrial con sistema de automatización y monitoreo',
+      'Desarrollo de arquitectura de supervisión con visualización en tiempo real y gestión de alarmas para mejorar la trazabilidad y la respuesta ante eventos operacionales.',
+    image: '/images/monitoreo-remoto.jpg',
+    imageAlt: 'Supervisión técnica remota de variables críticas en planta industrial',
     orientation: 'image-right',
   },
   {
-    name: 'Monitoreo remoto para red multi-sitio de procesos críticos',
+    title: 'Normalización y modernización de tableros eléctricos',
     description:
-      'Implementación de arquitectura de telemetría con adquisición de datos PLC/HMI, alarmas por condición y panel de supervisión técnica para mantenimiento basado en condición.',
-    image: '/images/plc-control.svg',
-    imageAlt: 'Pantalla de control PLC HMI con métricas y estados de monitoreo en terreno',
-    orientation: 'full-image',
+      'Actualización de tableros de fuerza y control bajo criterios técnicos actuales, mejorando seguridad, mantenibilidad y confiabilidad del sistema.',
+    image: '/images/tablero-electrico.jpg',
+    imageAlt: 'Tablero eléctrico industrial modernizado para continuidad operacional',
+    orientation: 'image-left',
   },
 ]
 
 export function ProjectsSection() {
   return (
     <section className="home-section home-projects" aria-labelledby="projects-title">
-      <div className="home-section-header home-section-header-inline reveal reveal-up">
-        <div>
-          <p className="home-kicker">Implementaciones en terreno</p>
-          <h2 id="projects-title">Proyectos destacados</h2>
-          <p className="home-muted">Ingeniería aplicada en energía, control y continuidad operacional.</p>
-        </div>
-        <NavLink className="home-text-link" to="/proyectos">
-          Revisar portafolio completo
-        </NavLink>
+      <div className="home-section-header reveal reveal-up">
+        <p className="home-kicker">Casos reales</p>
+        <h2 id="projects-title">Implementaciones reales en terreno</h2>
+        <p className="home-muted">
+          Soluciones aplicadas en control, automatización y continuidad operacional.
+        </p>
       </div>
 
       <div className="home-projects-list">
-        {featuredProjects.map((project, index) => (
+        {fieldProjects.map((project, index) => (
           <article
-            key={project.name}
-            className={`home-project-item ${project.orientation} reveal reveal-side`}
+            key={project.title}
+            className={`home-project-item ${project.orientation} reveal ${
+              project.orientation === 'image-left' ? 'reveal-left' : 'reveal-right'
+            }`}
             style={{ transitionDelay: `${index * 100}ms` }}
           >
             <div
@@ -61,15 +58,15 @@ export function ProjectsSection() {
               role="img"
               aria-label={project.imageAlt}
               style={{
-                backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.22), rgba(37, 99, 235, 0.2)), url('${project.image}')`,
+                backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.26), rgba(37, 99, 235, 0.16)), url('${project.image}')`,
               }}
             />
             <div className="home-project-content">
-              <h3>{project.name}</h3>
+              <h3>{project.title}</h3>
               <p>{project.description}</p>
-              <NavLink className="home-inline-link" to="/proyectos">
+              <button className="home-inline-button" type="button" aria-label={`Ver más sobre ${project.title}`}>
                 Ver más
-              </NavLink>
+              </button>
             </div>
           </article>
         ))}

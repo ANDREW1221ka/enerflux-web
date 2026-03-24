@@ -353,10 +353,6 @@ a {
   order: 1;
 }
 
-.home-project-item.full-image {
-  grid-template-columns: minmax(280px, 1.2fr) 1fr;
-}
-
 .home-project-image {
   min-height: 260px;
   background-position: center;
@@ -390,8 +386,17 @@ a {
   line-height: 1.6;
 }
 
-.home-inline-link {
-  margin-top: 0.55rem;
+.home-inline-button {
+  margin-top: 0.65rem;
+  width: fit-content;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background-color: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.48rem 0.95rem;
+  cursor: default;
 }
 
 .home-cta {
@@ -417,8 +422,12 @@ a {
   transition: opacity 0.65s ease, transform 0.65s ease;
 }
 
-.reveal-side {
+.reveal-left {
   transform: translate3d(-24px, 0, 0);
+}
+
+.reveal-right {
+  transform: translate3d(24px, 0, 0);
 }
 
 .reveal.is-visible {
@@ -443,8 +452,7 @@ a {
     flex-wrap: wrap;
   }
 
-  .home-project-item,
-  .home-project-item.full-image {
+  .home-project-item {
     grid-template-columns: 1fr;
   }
 
@@ -471,7 +479,8 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .reveal-side,
+  .reveal-left,
+  .reveal-right,
   .home-service-item,
   .hero-primary-button,
   .hero-secondary-button,
