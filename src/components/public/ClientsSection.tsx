@@ -1,12 +1,12 @@
 type Collaborator = {
   name: string
+  logoPath: string
 }
 
 const collaborators: Collaborator[] = [
-  { name: 'ServimacB' },
-  { name: 'Universidad de Chile – Facultad de Derecho' },
-  { name: 'H20 Ingeniería SpA' },
-  { name: 'Otros clientes y colaboradores' },
+  { name: 'ServimacB', logoPath: '/logos/servimacb.png' },
+  { name: 'Universidad de Chile – Facultad de Derecho', logoPath: '/logos/uchile.png' },
+  { name: 'H20 Ingeniería SpA', logoPath: '/logos/h20.png' },
 ]
 
 export function ClientsSection() {
@@ -29,8 +29,13 @@ export function ClientsSection() {
             style={{ transitionDelay: `${index * 70}ms` }}
             role="listitem"
           >
-            <span className="home-client-marker" aria-hidden="true" />
-            <h3>{collaborator.name}</h3>
+            <img
+              src={collaborator.logoPath}
+              alt={collaborator.name}
+              loading="lazy"
+              decoding="async"
+              className="home-client-logo"
+            />
           </article>
         ))}
       </div>
