@@ -144,13 +144,14 @@ a {
   position: relative;
   overflow: hidden;
   border-radius: 22px;
-  min-height: clamp(370px, 54vw, 520px);
+  min-height: clamp(420px, 62vh, 620px);
   display: flex;
   align-items: center;
   isolation: isolate;
   border: 1px solid #d5deea;
   background:
-    linear-gradient(120deg, rgba(2, 6, 23, 0.84), rgba(15, 23, 42, 0.66)),
+    linear-gradient(120deg, rgba(2, 6, 23, 0.9), rgba(15, 23, 42, 0.72)),
+    url('/images/hero-industrial.jpg') center / cover,
     url('/images/hero-industrial.svg') center / cover;
 }
 
@@ -158,15 +159,15 @@ a {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 78% 25%, rgba(14, 116, 144, 0.35), transparent 30%),
-    linear-gradient(180deg, rgba(37, 99, 235, 0.15), rgba(15, 23, 42, 0.4));
+    radial-gradient(circle at 82% 22%, rgba(14, 116, 144, 0.3), transparent 32%),
+    linear-gradient(180deg, rgba(37, 99, 235, 0.1), rgba(15, 23, 42, 0.5));
   z-index: 0;
 }
 
 .home-hero-content {
   position: relative;
   z-index: 1;
-  padding: clamp(1.6rem, 3.5vw, 3rem);
+  padding: clamp(2rem, 5vw, 4rem);
   max-width: min(760px, 100%);
 }
 
@@ -186,21 +187,21 @@ a {
 
 .home-hero h1 {
   margin: 0.9rem 0 0;
-  font-size: clamp(1.95rem, 4vw, 3.15rem);
-  line-height: 1.1;
+  font-size: clamp(2rem, 4.2vw, 3.25rem);
+  line-height: 1.15;
   color: #f8fafc;
-  max-width: 20ch;
+  max-width: 22ch;
 }
 
 .home-hero-subtitle {
-  margin: 1rem 0 0;
-  max-width: 62ch;
+  margin: 1.15rem 0 0;
+  max-width: 58ch;
   color: #dbeafe;
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 .home-hero-actions {
-  margin-top: 1.5rem;
+  margin-top: 1.9rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.8rem;
@@ -467,13 +468,22 @@ a {
 }
 
 @media (max-width: 700px) {
+  .home-hero {
+    min-height: clamp(420px, 70vh, 560px);
+    align-items: flex-end;
+  }
+
+  .home-hero-content {
+    padding: 1.4rem;
+  }
+
   .home-section-header-inline {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .home-hero h1 {
-    max-width: 16ch;
+    max-width: 14ch;
   }
 }
 
