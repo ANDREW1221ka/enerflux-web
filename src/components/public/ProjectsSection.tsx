@@ -1,6 +1,7 @@
 type Project = {
   title: string
   description: string
+  technicalResult: string
   image: string
   imageAlt: string
   orientation: 'image-left' | 'image-right'
@@ -11,6 +12,8 @@ const fieldProjects: Project[] = [
     title: 'Automatización de sala de bombas con PLC y variadores de frecuencia',
     description:
       'Implementación de lógica de control secuencial, integración de variadores de frecuencia y optimización de operación hidráulica para mejorar estabilidad y continuidad del sistema.',
+    technicalResult:
+      'Mejora en la estabilidad del sistema hidráulico, reducción de detenciones operativas y mayor control sobre la secuencia de funcionamiento de las bombas.',
     image: '/images/sala-bombas.jpg',
     imageAlt: 'Sala de bombas industrial con equipos de control y variadores de frecuencia',
     orientation: 'image-left',
@@ -19,6 +22,8 @@ const fieldProjects: Project[] = [
     title: 'Monitoreo remoto y telemetría para instalaciones críticas',
     description:
       'Desarrollo de arquitectura de supervisión con visualización en tiempo real y gestión de alarmas para mejorar la trazabilidad y la respuesta ante eventos operacionales.',
+    technicalResult:
+      'Mayor visibilidad del estado de la instalación, capacidad de respuesta ante alarmas y mejora en la trazabilidad de eventos operacionales.',
     image: '/images/monitoreo-remoto.jpg',
     imageAlt: 'Supervisión técnica remota de variables críticas en planta industrial',
     orientation: 'image-right',
@@ -27,6 +32,8 @@ const fieldProjects: Project[] = [
     title: 'Normalización y modernización de tableros eléctricos',
     description:
       'Actualización de tableros de fuerza y control bajo criterios técnicos actuales, mejorando seguridad, mantenibilidad y confiabilidad del sistema.',
+    technicalResult:
+      'Incremento en la seguridad eléctrica, mejor orden del sistema y mayor facilidad de mantenimiento y diagnóstico técnico.',
     image: '/images/tablero-electrico.jpg',
     imageAlt: 'Tablero eléctrico industrial modernizado para continuidad operacional',
     orientation: 'image-left',
@@ -64,6 +71,15 @@ export function ProjectsSection() {
             <div className="home-project-content">
               <h3>{project.title}</h3>
               <p>{project.description}</p>
+              <div className="home-project-result" aria-label="Resultado técnico">
+                <span className="home-project-result-icon" aria-hidden="true">
+                  ⚙️
+                </span>
+                <div>
+                  <strong>Resultado técnico</strong>
+                  <p>{project.technicalResult}</p>
+                </div>
+              </div>
               <button className="home-inline-button" type="button" aria-label={`Ver más sobre ${project.title}`}>
                 Ver más
               </button>
