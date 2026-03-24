@@ -1,12 +1,17 @@
 import { collection, getDocs, type QueryDocumentSnapshot } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
-import { db } from '../../services/firebase'
+import { UserForm, type UserFormValues } from '../../components/admin/UserForm'
 import type { UserProfile } from '../../hooks/useAuth'
+import { createAdminUser } from '../../services/adminUsers'
+import { db } from '../../services/firebase'
 
 export function AdminPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
-  const [showCreatePlaceholder, setShowCreatePlaceholder] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createSource, setCreateSource] = useState<'api' | 'mock' | null>(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -39,24 +44,65 @@ export function AdminPage() {
     void fetchUsers()
   }, [])
 
+  const handleCreateUser = async (values: UserFormValues) => {
+    setSubmitting(true)
+    setCreateError(null)
+
+    try {
+      const created = await createAdminUser(values)
+
+      setUsers((currentUsers) => [created.user, ...currentUsers])
+      setCreateSource(created.source)
+      setIsCreateModalOpen(false)
+    } catch (error) {
+      console.error('No fue posible crear el usuario.', error)
+      setCreateError('No fue posible crear el usuario. Intenta nuevamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <section className="admin-page">
       <header className="admin-page-header">
         <h2>Administración de usuarios</h2>
-        <button type="button" onClick={() => setShowCreatePlaceholder((value) => !value)}>
+        <button
+          type="button"
+          onClick={() => {
+            setIsCreateModalOpen(true)
+            setCreateError(null)
+          }}
+        >
           Crear usuario
         </button>
       </header>
 
-      {showCreatePlaceholder ? (
-        <div className="admin-create-placeholder">
-          <p>Formulario base listo (placeholder):</p>
-          <input type="text" placeholder="Nombre" disabled />
-          <input type="email" placeholder="Email" disabled />
-          <select disabled>
-            <option>client</option>
-            <option>admin</option>
-          </select>
+      {createSource ? (
+        <p className="admin-flow-note">
+          Usuario creado usando modo <strong>{createSource}</strong>.
+        </p>
+      ) : null}
+
+      {isCreateModalOpen ? (
+        <div className="admin-modal-overlay" role="presentation" onClick={() => setIsCreateModalOpen(false)}>
+          <section
+            className="admin-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Crear usuario"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header>
+              <h3>Crear usuario cliente</h3>
+              <p>Este flujo prepara el alta vía endpoint seguro ({`POST /admin/create-user`}).</p>
+            </header>
+            <UserForm
+              submitting={submitting}
+              serverError={createError}
+              onCancel={() => setIsCreateModalOpen(false)}
+              onSubmit={handleCreateUser}
+            />
+          </section>
         </div>
       ) : null}
 
