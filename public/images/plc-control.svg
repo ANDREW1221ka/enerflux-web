@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img">
+  <rect width="1400" height="900" fill="#111827"/>
+  <rect x="90" y="130" width="1220" height="640" rx="28" fill="#1e293b" stroke="#334155" stroke-width="6"/>
+  <g fill="#22d3ee" opacity="0.8">
+    <rect x="170" y="220" width="240" height="140" rx="10"/>
+    <rect x="450" y="220" width="240" height="140" rx="10"/>
+    <rect x="730" y="220" width="240" height="140" rx="10"/>
+    <rect x="1010" y="220" width="220" height="140" rx="10"/>
+  </g>
+  <g stroke="#60a5fa" stroke-width="10" opacity="0.75">
+    <path d="M170 500h1060"/>
+    <path d="M170 560h860"/>
+    <path d="M170 620h640"/>
+  </g>
+  <text x="90" y="840" fill="#dbeafe" font-size="44" font-family="Inter, Arial, sans-serif">Placeholder: PLC / HMI</text>
+</svg>
