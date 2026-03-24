@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 
 export function LoginPage() {
-  const { user, signIn } = useAuth()
+  const { loading, profile, user, signIn } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -13,7 +13,11 @@ export function LoginPage() {
 
   const redirectTo = location.state?.from?.pathname ?? '/app'
 
-  if (user) {
+  if (loading) {
+    return <p>Cargando sesión...</p>
+  }
+
+  if (user && profile?.active) {
     return <Navigate to="/app" replace />
   }
 
