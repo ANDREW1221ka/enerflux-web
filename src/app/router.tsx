@@ -5,7 +5,6 @@ import { DashboardPage } from '../pages/app/DashboardPage'
 import { ContactPage } from '../pages/public/ContactPage'
 import { HomePage } from '../pages/public/HomePage'
 import { LoginPage } from '../pages/public/LoginPage'
-import { ProjectsPage } from '../pages/public/ProjectsPage'
 import { ServicesPage } from '../pages/public/ServicesPage'
 
 export const router = createBrowserRouter([
@@ -14,7 +13,6 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/servicios', element: <ServicesPage /> },
-      { path: '/proyectos', element: <ProjectsPage /> },
       { path: '/contacto', element: <ContactPage /> },
       { path: '/login', element: <LoginPage /> },
     ],

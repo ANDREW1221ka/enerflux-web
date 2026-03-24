@@ -34,12 +34,12 @@ export function PublicLayout() {
       <footer className="public-footer">
         <div className="public-footer-inner">
           <p className="footer-company">Enerflux SpA</p>
-          <a href="mailto:contacto@enerflux.cl">contacto@enerflux.cl</a>
+          <a href="mailto:contacto@enerflux.cl">Andres@enerfluxspa.cl</a>
           <p className="footer-copy">
-            Soluciones técnicas confiables para proyectos energéticos y de automatización.
+            Soluciones integrales de ingenieria para proyectos energéticos de automatización y fluidos.
           </p>
         </div>
-      </footer>
+      </footer> 
     </div>
   )
 }
