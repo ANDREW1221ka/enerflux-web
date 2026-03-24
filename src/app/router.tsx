@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { ProtectedRoute } from './ProtectedRoute'
 import { AppLayout } from '../layouts/AppLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { DashboardPage } from '../pages/app/DashboardPage'
@@ -18,8 +19,13 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/app',
-    element: <AppLayout />,
-    children: [{ index: true, element: <DashboardPage /> }],
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '/app',
+        element: <AppLayout />,
+        children: [{ index: true, element: <DashboardPage /> }],
+      },
+    ],
   },
 ])
