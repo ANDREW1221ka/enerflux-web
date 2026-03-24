@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 
+import { ClientsSection } from '../../components/public/ClientsSection'
 import { ContactCTASection } from '../../components/public/ContactCTASection'
 import { HeroSection } from '../../components/public/HeroSection'
+import { ProcessSection } from '../../components/public/ProcessSection'
 import { ProjectsSection } from '../../components/public/ProjectsSection'
 import { ServicesSection } from '../../components/public/ServicesSection'
 
@@ -33,6 +35,8 @@ export function HomePage() {
       <HeroSection />
       <ServicesSection />
       <ProjectsSection />
+      <ProcessSection />
+      <ClientsSection />
       <ContactCTASection />
     </div>
   )
