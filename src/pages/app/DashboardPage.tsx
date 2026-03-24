@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { user, signOutUser } = useAuth()
+  const { profile, signOutUser } = useAuth()
 
   async function handleSignOut() {
     await signOutUser()
@@ -11,10 +11,28 @@ export function DashboardPage() {
   }
 
   return (
-    <section>
-      <h2>Bienvenido</h2>
-      <p>{user?.email ?? 'Usuario autenticado'}</p>
-      <button type="button" onClick={handleSignOut}>
+    <section className="dashboard-page">
+      <header>
+        <h2>Bienvenido a Enerflux</h2>
+        <p>Este es tu panel base de cliente.</p>
+      </header>
+
+      <dl className="dashboard-details">
+        <div>
+          <dt>Nombre</dt>
+          <dd>{profile?.displayName ?? 'Sin nombre'}</dd>
+        </div>
+        <div>
+          <dt>Empresa</dt>
+          <dd>{profile?.companyName ?? 'Sin empresa'}</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{profile?.email ?? 'Sin email'}</dd>
+        </div>
+      </dl>
+
+      <button type="button" className="dashboard-signout" onClick={handleSignOut}>
         Cerrar sesión
       </button>
     </section>

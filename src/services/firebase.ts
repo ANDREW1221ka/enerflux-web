@@ -5,6 +5,7 @@ import {
   setPersistence,
   type Auth,
 } from 'firebase/auth'
+import { getFirestore, type Firestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,6 +17,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig)
 
 export const auth: Auth = getAuth(firebaseApp)
+export const db: Firestore = getFirestore(firebaseApp)
 
 let persistenceConfigured = false
 

@@ -1,7 +1,9 @@
 import { createBrowserRouter } from 'react-router-dom'
-import { ProtectedRoute } from './ProtectedRoute'
+import { ProtectedRoute } from '../components/auth/ProtectedRoute'
+import { RoleGuard } from '../components/auth/RoleGuard'
 import { AppLayout } from '../layouts/AppLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
+import { AdminPage } from '../pages/app/AdminPage'
 import { DashboardPage } from '../pages/app/DashboardPage'
 import { ContactPage } from '../pages/public/ContactPage'
 import { HomePage } from '../pages/public/HomePage'
@@ -24,7 +26,13 @@ export const router = createBrowserRouter([
       {
         path: '/app',
         element: <AppLayout />,
-        children: [{ index: true, element: <DashboardPage /> }],
+        children: [
+          { index: true, element: <DashboardPage /> },
+          {
+            element: <RoleGuard allowedRoles={['admin']} />,
+            children: [{ path: 'admin', element: <AdminPage /> }],
+          },
+        ],
       },
     ],
   },
