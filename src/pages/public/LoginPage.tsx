@@ -33,35 +33,51 @@ export function LoginPage() {
   }
 
   return (
-    <section>
-      <h2>Ingreso clientes</h2>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          autoComplete="email"
-        />
+    <section className="login-page">
+      <div className="login-card" role="region" aria-labelledby="login-title">
+        <header className="login-header">
+          <h2 id="login-title">Ingreso clientes</h2>
+          <p>Accede a tu panel de monitoreo y servicios</p>
+        </header>
 
-        <label htmlFor="password">Contraseña</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          autoComplete="current-password"
-        />
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
+          <div className="login-field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+              aria-invalid={Boolean(errorMessage)}
+            />
+          </div>
 
-        {errorMessage ? <p role="alert">{errorMessage}</p> : null}
+          <div className="login-field">
+            <label htmlFor="password">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete="current-password"
+              aria-invalid={Boolean(errorMessage)}
+            />
+          </div>
 
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
-        </button>
-      </form>
+          {errorMessage ? (
+            <p className="login-error" role="alert" aria-live="polite">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <button className="login-submit" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
+          </button>
+        </form>
+      </div>
     </section>
   )
 }
