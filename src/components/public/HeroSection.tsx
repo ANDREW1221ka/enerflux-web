@@ -15,8 +15,8 @@ export function HeroSection() {
           procesos.
         </p>
         <div className="home-hero-actions">
-          <NavLink className="hero-primary-button" to="/proyectos">
-            Ver proyectos
+          <NavLink className="hero-primary-button" to="/servicios">
+            Ver servicios
           </NavLink>
           <NavLink className="hero-secondary-button" to="/login">
             Ingreso clientes
