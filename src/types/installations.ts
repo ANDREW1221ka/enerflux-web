@@ -1,23 +1,108 @@
-export type Installation = {
-  id: string
-  name: string
-  companyId: string
-  companyName: string
-  type: string
-  location: string
-  active: boolean
-  createdAt: string
+export const INSTALLATION_CATEGORIES = [
+  'power_system',
+  'pumping_system',
+  'treatment_system',
+  'production_system',
+  'energy_generation_system',
+  'power_quality_system',
+  'custom',
+] as const
+
+export type InstallationCategory = (typeof INSTALLATION_CATEGORIES)[number]
+
+export const INSTALLATION_TYPES = [
+  'mv_distribution',
+  'lv_distribution',
+  'main_switchboard',
+  'motor_control_center',
+  'drinking_water_pumping',
+  'peas_pumping',
+  'riles_pumping',
+  'wastewater_pumping',
+  'treatment_plant',
+  'food_processing_plant',
+  'production_line',
+  'industrial_process_control',
+  'generator_system',
+  'solar_generation',
+  'hybrid_energy_system',
+  'power_quality_monitoring',
+  'custom',
+] as const
+
+export type InstallationType = (typeof INSTALLATION_TYPES)[number]
+
+export type InstallationLocation = {
+  address?: string
+  comuna?: string
+  region?: string
+  plant?: string
+  area?: string
 }
 
-export type CreateInstallationPayload = {
+export type InstallationCapabilities = {
+  telemetry: boolean
+  alarms: boolean
+  remoteControl: boolean
+  trends: boolean
+  notifications: boolean
+}
+
+export type InstallationTechnicalData = {
+  plc?: string
+  vfd?: string
+  hmi?: string
+  mqtt?: boolean
+  modbus?: boolean
+  sensors?: number
+  actuators?: number
+  powerLevel?: string
+}
+
+export type InstallationRealtimeCurrent = {
+  updatedAt?: string
+  connectivity?: 'online' | 'offline' | 'degraded'
+  values?: Record<string, number | string | boolean | null>
+  alarms?: Array<{
+    code: string
+    message: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    active: boolean
+    detectedAt?: string
+  }>
+}
+
+export type Installation = {
+  id?: string
   name: string
   companyId: string
   companyName: string
-  type: string
-  location: string
+  category: InstallationCategory
+  type: InstallationType
+  subtype?: string
+  location?: InstallationLocation
+  description?: string
   active: boolean
+  clientVisible: boolean
+  capabilities: InstallationCapabilities
+  technical?: InstallationTechnicalData
+  createdAt?: string
+  createdBy?: string
 }
+
+export type CreateInstallationPayload = Omit<Installation, 'id' | 'createdAt'>
 
 export type UpdateInstallationPayload = CreateInstallationPayload & {
   id: string
 }
+
+export const DEFAULT_INSTALLATION_CAPABILITIES: InstallationCapabilities = {
+  telemetry: false,
+  alarms: false,
+  remoteControl: false,
+  trends: false,
+  notifications: false,
+}
+
+export const DEFAULT_INSTALLATION_CATEGORY: InstallationCategory = 'custom'
+export const DEFAULT_INSTALLATION_TYPE: InstallationType = 'custom'

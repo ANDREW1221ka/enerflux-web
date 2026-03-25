@@ -185,7 +185,7 @@ export function AdminPage() {
   }
 
   const handleEditInstallation = async (values: InstallationFormValues) => {
-    if (!selectedInstallation) {
+    if (!selectedInstallation?.id) {
       return
     }
 

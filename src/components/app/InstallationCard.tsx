@@ -4,6 +4,17 @@ type InstallationCardProps = {
   installation: Installation
 }
 
+function formatLocation(installation: Installation): string {
+  const location = installation.location
+
+  if (!location) {
+    return 'Sin ubicación'
+  }
+
+  const parts = [location.address, location.area, location.plant, location.comuna, location.region].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : 'Sin ubicación'
+}
+
 export function InstallationCard({ installation }: InstallationCardProps) {
   return (
     <article className="installation-card">
@@ -20,7 +31,7 @@ export function InstallationCard({ installation }: InstallationCardProps) {
         </div>
         <div>
           <dt>Ubicación</dt>
-          <dd>{installation.location}</dd>
+          <dd>{formatLocation(installation)}</dd>
         </div>
       </dl>
     </article>

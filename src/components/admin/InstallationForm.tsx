@@ -1,6 +1,13 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { Company } from '../../types/companies'
-import type { CreateInstallationPayload } from '../../types/installations'
+import {
+  DEFAULT_INSTALLATION_CAPABILITIES,
+  DEFAULT_INSTALLATION_CATEGORY,
+  DEFAULT_INSTALLATION_TYPE,
+  INSTALLATION_CATEGORIES,
+  INSTALLATION_TYPES,
+  type CreateInstallationPayload,
+} from '../../types/installations'
 
 export type InstallationFormValues = CreateInstallationPayload
 
@@ -14,21 +21,30 @@ type InstallationFormProps = {
   onSubmit: (values: InstallationFormValues) => Promise<void>
 }
 
-type InstallationFormErrors = Partial<Record<keyof InstallationFormValues, string>>
+type InstallationFormErrors = Partial<Record<'name' | 'companyId' | 'type' | 'locationAddress', string>>
 
 const INITIAL_VALUES: InstallationFormValues = {
   name: '',
   companyId: '',
   companyName: '',
-  type: '',
-  location: '',
+  category: DEFAULT_INSTALLATION_CATEGORY,
+  type: DEFAULT_INSTALLATION_TYPE,
   active: true,
+  clientVisible: true,
+  capabilities: DEFAULT_INSTALLATION_CAPABILITIES,
 }
 
 function normalizeValues(defaultValues?: Partial<InstallationFormValues>): InstallationFormValues {
   return {
     ...INITIAL_VALUES,
     ...defaultValues,
+    category: defaultValues?.category ?? DEFAULT_INSTALLATION_CATEGORY,
+    type: defaultValues?.type ?? DEFAULT_INSTALLATION_TYPE,
+    clientVisible: defaultValues?.clientVisible ?? true,
+    capabilities: {
+      ...DEFAULT_INSTALLATION_CAPABILITIES,
+      ...defaultValues?.capabilities,
+    },
   }
 }
 
@@ -43,8 +59,8 @@ function validate(values: InstallationFormValues, companies: Company[]): Install
     errors.type = 'El tipo es obligatorio.'
   }
 
-  if (!values.location.trim()) {
-    errors.location = 'La ubicación es obligatoria.'
+  if (!(values.location?.address?.trim())) {
+    errors.locationAddress = 'La ubicación es obligatoria.'
   }
 
   if (!values.companyId.trim()) {
@@ -84,12 +100,16 @@ export function InstallationForm({
     }
 
     await onSubmit({
+      ...values,
       name: values.name.trim(),
       companyId: values.companyId,
       companyName: selectedCompany?.name ?? values.companyName,
-      type: values.type.trim(),
-      location: values.location.trim(),
-      active: values.active,
+      subtype: values.subtype?.trim(),
+      description: values.description?.trim(),
+      location: {
+        ...values.location,
+        address: values.location?.address?.trim(),
+      },
     })
   }
 
@@ -117,25 +137,65 @@ export function InstallationForm({
       </label>
 
       <label>
+        Categoría
+        <select
+          value={values.category}
+          onChange={(event) =>
+            setValues((current) => ({ ...current, category: event.target.value as InstallationFormValues['category'] }))
+          }
+        >
+          {INSTALLATION_CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
         Tipo
+        <select
+          value={values.type}
+          onChange={(event) =>
+            setValues((current) => ({ ...current, type: event.target.value as InstallationFormValues['type'] }))
+          }
+        >
+          {INSTALLATION_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+        {errors.type ? <span className="form-error">{errors.type}</span> : null}
+      </label>
+
+      <label>
+        Subtipo
         <input
           type="text"
-          value={values.type}
-          onChange={(event) => setValues((current) => ({ ...current, type: event.target.value }))}
-          placeholder="Solar fotovoltaica"
+          value={values.subtype ?? ''}
+          onChange={(event) => setValues((current) => ({ ...current, subtype: event.target.value }))}
+          placeholder="custom subtype"
         />
-        {errors.type ? <span className="form-error">{errors.type}</span> : null}
       </label>
 
       <label>
         Ubicación
         <input
           type="text"
-          value={values.location}
-          onChange={(event) => setValues((current) => ({ ...current, location: event.target.value }))}
+          value={values.location?.address ?? ''}
+          onChange={(event) =>
+            setValues((current) => ({
+              ...current,
+              location: {
+                ...current.location,
+                address: event.target.value,
+              },
+            }))
+          }
           placeholder="Quilicura, RM"
         />
-        {errors.location ? <span className="form-error">{errors.location}</span> : null}
+        {errors.locationAddress ? <span className="form-error">{errors.locationAddress}</span> : null}
       </label>
 
       <label>
@@ -151,6 +211,16 @@ export function InstallationForm({
         {errors.companyId ? <span className="form-error">{errors.companyId}</span> : null}
       </label>
 
+      <label>
+        Descripción
+        <textarea
+          value={values.description ?? ''}
+          onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
+          placeholder="Descripción técnica de la instalación"
+          rows={3}
+        />
+      </label>
+
       <label className="user-form-checkbox">
         <input
           type="checkbox"
@@ -158,6 +228,15 @@ export function InstallationForm({
           onChange={(event) => setValues((current) => ({ ...current, active: event.target.checked }))}
         />
         Activa
+      </label>
+
+      <label className="user-form-checkbox">
+        <input
+          type="checkbox"
+          checked={values.clientVisible}
+          onChange={(event) => setValues((current) => ({ ...current, clientVisible: event.target.checked }))}
+        />
+        Visible para cliente
       </label>
 
       {serverError ? <p className="form-error">{serverError}</p> : null}
