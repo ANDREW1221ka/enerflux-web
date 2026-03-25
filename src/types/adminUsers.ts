@@ -1,9 +1,11 @@
-import type { UserRole } from '../hooks/useAuth'
+import type { ClientRole, UserRole } from '../hooks/useAuth'
 
 export type CreateUserPayload = {
   displayName: string
   email: string
-  companyName: string
   role: UserRole
+  clientRole: ClientRole
+  companyId: string
+  companyName: string
   active: boolean
 }

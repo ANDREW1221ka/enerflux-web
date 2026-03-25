@@ -7,6 +7,21 @@ import type { UserProfile } from '../../hooks/useAuth'
 import { createAdminUser, updateAdminUser } from '../../services/adminUsers'
 import { db } from '../../services/firebase'
 
+function normalizeUser(document: QueryDocumentSnapshot): UserProfile {
+  const data = document.data() as Partial<UserProfile>
+
+  return {
+    uid: document.id,
+    email: data.email ?? '-',
+    displayName: data.displayName ?? 'Sin nombre',
+    role: data.role === 'platform_admin' ? 'platform_admin' : 'client_user',
+    clientRole: data.clientRole === 'client_admin' ? 'client_admin' : 'client_monitor',
+    companyId: data.companyId ?? '-',
+    companyName: data.companyName ?? '-',
+    active: data.active === true,
+  }
+}
+
 export function AdminPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,19 +41,7 @@ export function AdminPage() {
 
       try {
         const snapshot = await getDocs(collection(db, 'users'))
-        const mappedUsers = snapshot.docs.map((document: QueryDocumentSnapshot) => {
-          const data = document.data() as Partial<UserProfile>
-
-          return {
-            uid: document.id,
-            email: data.email ?? '-',
-            displayName: data.displayName ?? 'Sin nombre',
-            role: data.role === 'admin' ? 'admin' : 'client',
-            companyName: data.companyName ?? '-',
-            active: data.active === true,
-          } as UserProfile
-        })
-
+        const mappedUsers = snapshot.docs.map(normalizeUser)
         setUsers(mappedUsers)
       } catch (error) {
         console.error('No fue posible cargar el listado de usuarios.', error)
@@ -81,8 +84,10 @@ export function AdminPage() {
       await updateAdminUser({
         uid: selectedUser.uid,
         displayName: values.displayName,
-        companyName: values.companyName,
         role: values.role,
+        clientRole: values.clientRole,
+        companyId: values.companyId,
+        companyName: values.companyName,
         active: values.active,
       })
 
@@ -92,8 +97,10 @@ export function AdminPage() {
             ? {
                 ...user,
                 displayName: values.displayName,
-                companyName: values.companyName,
                 role: values.role,
+                clientRole: values.clientRole,
+                companyId: values.companyId,
+                companyName: values.companyName,
                 active: values.active,
               }
             : user,
@@ -139,8 +146,8 @@ export function AdminPage() {
 
       {isCreateModalOpen ? (
         <AdminModal
-          title="Crear usuario cliente"
-          description="Completa datos para simular el flujo de alta. La creación real en Firebase Auth quedará para backend."
+          title="Crear usuario"
+          description="Define rol de plataforma, rol de cliente y empresa para el nuevo usuario."
           ariaLabel="Crear usuario"
           onClose={() => setIsCreateModalOpen(false)}
         >

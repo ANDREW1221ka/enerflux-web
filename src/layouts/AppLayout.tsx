@@ -13,7 +13,7 @@ export function AppLayout() {
             <NavLink to="/app" end>
               Dashboard
             </NavLink>
-            {profile?.role === 'admin' ? <NavLink to="/app/admin">Administración</NavLink> : null}
+            {profile?.role === 'platform_admin' ? <NavLink to="/app/admin">Administración</NavLink> : null}
           </nav>
         </div>
       </header>

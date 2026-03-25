@@ -29,7 +29,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           {
-            element: <RoleGuard allowedRoles={['admin']} />,
+            element: <RoleGuard allowedRoles={['platform_admin']} />,
             children: [{ path: 'admin', element: <AdminPage /> }],
           },
         ],

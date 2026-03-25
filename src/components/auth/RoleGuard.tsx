@@ -1,11 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth, type UserRole } from '../../hooks/useAuth'
+import { useAuth, type ClientRole, type UserRole } from '../../hooks/useAuth'
 
 type RoleGuardProps = {
   allowedRoles: UserRole[]
+  allowedClientRoles?: ClientRole[]
 }
 
-export function RoleGuard({ allowedRoles }: RoleGuardProps) {
+export function RoleGuard({ allowedRoles, allowedClientRoles }: RoleGuardProps) {
   const { loading, profile } = useAuth()
 
   if (loading) {
@@ -17,6 +18,10 @@ export function RoleGuard({ allowedRoles }: RoleGuardProps) {
   }
 
   if (!allowedRoles.includes(profile.role)) {
+    return <Navigate to="/app" replace />
+  }
+
+  if (allowedClientRoles && !allowedClientRoles.includes(profile.clientRole)) {
     return <Navigate to="/app" replace />
   }
 
