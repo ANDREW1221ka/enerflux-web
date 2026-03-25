@@ -888,6 +888,11 @@ a {
   font: inherit;
 }
 
+.user-form input:disabled {
+  background: #f8fafc;
+  color: #64748b;
+}
+
 .user-form-checkbox {
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -931,6 +936,11 @@ a {
   text-align: left;
   padding: 0.65rem;
   border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.admin-table-wrapper td:last-child {
+  width: 120px;
 }
 
 .admin-table-wrapper th {

@@ -1,4 +1,6 @@
+import { doc, updateDoc } from 'firebase/firestore'
 import type { UserProfile } from '../hooks/useAuth'
+import { db } from './firebase'
 import type { CreateUserPayload } from '../types/adminUsers'
 
 type CreateUserRequest = CreateUserPayload
@@ -67,4 +69,23 @@ export async function createAdminUser(payload: CreateUserRequest): Promise<Creat
     user: toUserProfile(data.uid ?? `pending-${Date.now()}`, payload),
     source: 'api',
   }
+}
+
+type UpdateAdminUserInput = {
+  uid: string
+  displayName: string
+  companyName: string
+  role: UserProfile['role']
+  active: boolean
+}
+
+export async function updateAdminUser(input: UpdateAdminUserInput): Promise<void> {
+  const reference = doc(db, 'users', input.uid)
+
+  await updateDoc(reference, {
+    displayName: input.displayName,
+    companyName: input.companyName,
+    role: input.role,
+    active: input.active,
+  })
 }
