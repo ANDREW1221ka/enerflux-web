@@ -30,7 +30,7 @@ type InstallationFormProps = {
   onSubmit: (values: CreateInstallationPayload) => Promise<void>
 }
 
-type InstallationFormErrors = Partial<Record<keyof InstallationFormValues, string>>
+type InstallationFormErrors = Partial<Record<'name' | 'companyId' | 'type' | 'locationAddress', string>>
 
 const INITIAL_VALUES: InstallationFormValues = {
   name: '',
@@ -49,6 +49,13 @@ function normalizeValues(defaultValues?: Partial<InstallationFormValues>): Insta
   return {
     ...INITIAL_VALUES,
     ...defaultValues,
+    category: defaultValues?.category ?? DEFAULT_INSTALLATION_CATEGORY,
+    type: defaultValues?.type ?? DEFAULT_INSTALLATION_TYPE,
+    clientVisible: defaultValues?.clientVisible ?? true,
+    capabilities: {
+      ...DEFAULT_INSTALLATION_CAPABILITIES,
+      ...defaultValues?.capabilities,
+    },
   }
 }
 
@@ -63,8 +70,8 @@ function validate(values: InstallationFormValues, companies: Company[]): Install
     errors.type = 'El tipo es obligatorio.'
   }
 
-  if (!values.location.trim()) {
-    errors.location = 'La ubicación es obligatoria.'
+  if (!(values.location?.address?.trim())) {
+    errors.locationAddress = 'La ubicación es obligatoria.'
   }
 
   if (!values.companyId.trim()) {
@@ -104,6 +111,7 @@ export function InstallationForm({
     }
 
     await onSubmit({
+      ...values,
       name: values.name.trim(),
       companyId: values.companyId,
       companyName: selectedCompany?.name ?? values.companyName,
@@ -180,11 +188,19 @@ export function InstallationForm({
         Ubicación
         <input
           type="text"
-          value={values.location}
-          onChange={(event) => setValues((current) => ({ ...current, location: event.target.value }))}
+          value={values.location?.address ?? ''}
+          onChange={(event) =>
+            setValues((current) => ({
+              ...current,
+              location: {
+                ...current.location,
+                address: event.target.value,
+              },
+            }))
+          }
           placeholder="Quilicura, RM"
         />
-        {errors.location ? <span className="form-error">{errors.location}</span> : null}
+        {errors.locationAddress ? <span className="form-error">{errors.locationAddress}</span> : null}
       </label>
 
       <label>
@@ -219,6 +235,16 @@ export function InstallationForm({
         {errors.companyId ? <span className="form-error">{errors.companyId}</span> : null}
       </label>
 
+      <label>
+        Descripción
+        <textarea
+          value={values.description ?? ''}
+          onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
+          placeholder="Descripción técnica de la instalación"
+          rows={3}
+        />
+      </label>
+
       <label className="user-form-checkbox">
         <input
           type="checkbox"
@@ -227,6 +253,15 @@ export function InstallationForm({
         />
         Activa
       </label>
+      <label className="user-form-checkbox">
+        <input
+          type="checkbox"
+          checked={values.clientVisible}
+          onChange={(event) => setValues((current) => ({ ...current, clientVisible: event.target.checked }))}
+        />
+        Visible para cliente
+      </label>
+
       <label className="user-form-checkbox">
         <input
           type="checkbox"

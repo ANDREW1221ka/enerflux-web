@@ -8,6 +8,7 @@ import {
   query,
   setDoc,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
   type QueryDocumentSnapshot,
@@ -42,12 +43,24 @@ type InstallationDocument = Partial<{
   createdBy: string
 }>
 
-function formatCreatedAt(createdAt: Timestamp | null | undefined): string {
+function formatCreatedAt(createdAt: Timestamp | null | undefined): string | undefined {
   if (!createdAt) {
-    return '-'
+    return undefined
   }
 
   return createdAt.toDate().toLocaleString('es-CL')
+}
+
+function normalizeCapabilities(
+  capabilities: InstallationCapabilities | null | undefined,
+): InstallationCapabilities {
+  return {
+    telemetry: capabilities?.telemetry === true,
+    alarms: capabilities?.alarms === true,
+    remoteControl: capabilities?.remoteControl === true,
+    trends: capabilities?.trends === true,
+    notifications: capabilities?.notifications === true,
+  }
 }
 
 function normalizeInstallation(document: QueryDocumentSnapshot): Installation {
@@ -135,7 +148,6 @@ export async function createInstallation(payload: CreateInstallationPayload): Pr
   await setRealtimeCurrentBase(reference.id, payload.realtimeCurrent)
 
   const snapshot = await getDoc(reference)
-  const data = snapshot.data() as InstallationDocument | undefined
 
   return {
     id: reference.id,
@@ -154,6 +166,8 @@ export async function createInstallation(payload: CreateInstallationPayload): Pr
     createdAt: formatCreatedAt(data?.createdAt),
     createdBy: data?.createdBy ?? normalizedCreatedBy,
   }
+
+  return normalizeInstallation(snapshot as QueryDocumentSnapshot)
 }
 
 export async function updateInstallation(payload: UpdateInstallationPayload): Promise<void> {

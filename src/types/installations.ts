@@ -88,6 +88,8 @@ export type CreateInstallationPayload = Omit<Installation, 'id' | 'createdAt'> &
   realtimeCurrent?: InstallationRealtimeCurrent
 }
 
+export type CreateInstallationPayload = Omit<Installation, 'id' | 'createdAt'>
+
 export type UpdateInstallationPayload = CreateInstallationPayload & {
   id: string
 }

@@ -6,6 +6,17 @@ type InstallationsTableProps = {
   onEditInstallation: (installation: Installation) => void
 }
 
+function formatLocation(installation: Installation): string {
+  const location = installation.location
+
+  if (!location) {
+    return 'Sin ubicación'
+  }
+
+  const parts = [location.address, location.area, location.plant, location.comuna, location.region].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : 'Sin ubicación'
+}
+
 export function InstallationsTable({ installations, onEditInstallation }: InstallationsTableProps) {
   if (installations.length === 0) {
     return <p className="admin-flow-note">Aún no hay instalaciones registradas.</p>
