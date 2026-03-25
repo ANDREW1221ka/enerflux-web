@@ -1,7 +1,8 @@
-import { collection, doc, getDocs, updateDoc, where, query } from 'firebase/firestore'
+import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore'
 import type { UserProfile } from '../hooks/useAuth'
-import { db } from './firebase'
 import type { CreateUserPayload } from '../types/adminUsers'
+import { getCompanyById } from './companies'
+import { db } from './firebase'
 
 type CreateUserRequest = CreateUserPayload
 
@@ -45,13 +46,38 @@ async function hasAnotherPlatformAdmin(excludeUid?: string): Promise<boolean> {
   return (snapshot.docs as Array<{ id: string }>).some((userDocument) => userDocument.id !== excludeUid)
 }
 
+async function ensureValidClientCompany(payload: { role: UserProfile['role']; companyId: string }) {
+  if (payload.role !== 'client_user') {
+    return null
+  }
+
+  if (!payload.companyId.trim()) {
+    throw new Error('Los usuarios cliente deben tener una empresa asignada.')
+  }
+
+  const company = await getCompanyById(payload.companyId)
+
+  if (!company) {
+    throw new Error('La empresa seleccionada no existe en Firestore.')
+  }
+
+  return company
+}
+
 export async function createAdminUser(payload: CreateUserRequest): Promise<CreateUserResponse> {
   if (payload.role === 'platform_admin' && (await hasAnotherPlatformAdmin())) {
     throw new Error('Solo se permite un administrador global en Enerflux.')
   }
 
+  const company = await ensureValidClientCompany({ role: payload.role, companyId: payload.companyId })
+  const normalizedPayload: CreateUserRequest = {
+    ...payload,
+    companyId: payload.role === 'platform_admin' ? '' : company?.id ?? payload.companyId,
+    companyName: payload.role === 'platform_admin' ? '' : company?.name ?? payload.companyName,
+  }
+
   if (CREATE_USER_MODE === 'mock') {
-    return mockCreateUser(payload)
+    return mockCreateUser(normalizedPayload)
   }
 
   const response = await fetch('/admin/create-user', {
@@ -59,7 +85,7 @@ export async function createAdminUser(payload: CreateUserRequest): Promise<Creat
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(normalizedPayload),
   })
 
   if (!response.ok) {
@@ -72,20 +98,20 @@ export async function createAdminUser(payload: CreateUserRequest): Promise<Creat
     return {
       user: {
         uid: data.user.uid ?? data.uid ?? `pending-${Date.now()}`,
-        email: data.user.email ?? payload.email,
-        displayName: data.user.displayName ?? payload.displayName,
-        role: data.user.role === 'platform_admin' ? 'platform_admin' : payload.role,
-        clientRole: data.user.clientRole === 'client_admin' ? 'client_admin' : payload.clientRole,
-        companyId: data.user.companyId ?? payload.companyId,
-        companyName: data.user.companyName ?? payload.companyName,
-        active: data.user.active ?? payload.active,
+        email: data.user.email ?? normalizedPayload.email,
+        displayName: data.user.displayName ?? normalizedPayload.displayName,
+        role: data.user.role === 'platform_admin' ? 'platform_admin' : normalizedPayload.role,
+        clientRole: data.user.clientRole === 'client_admin' ? 'client_admin' : normalizedPayload.clientRole,
+        companyId: data.user.companyId ?? normalizedPayload.companyId,
+        companyName: data.user.companyName ?? normalizedPayload.companyName,
+        active: data.user.active ?? normalizedPayload.active,
       },
       source: 'api',
     }
   }
 
   return {
-    user: toUserProfile(data.uid ?? `pending-${Date.now()}`, payload),
+    user: toUserProfile(data.uid ?? `pending-${Date.now()}`, normalizedPayload),
     source: 'api',
   }
 }
@@ -105,14 +131,15 @@ export async function updateAdminUser(input: UpdateAdminUserInput): Promise<void
     throw new Error('Solo se permite un administrador global en Enerflux.')
   }
 
+  const company = await ensureValidClientCompany({ role: input.role, companyId: input.companyId })
   const reference = doc(db, 'users', input.uid)
 
   await updateDoc(reference, {
     displayName: input.displayName,
     role: input.role,
     clientRole: input.clientRole,
-    companyId: input.companyId,
-    companyName: input.companyName,
+    companyId: input.role === 'platform_admin' ? '' : company?.id ?? input.companyId,
+    companyName: input.role === 'platform_admin' ? '' : company?.name ?? input.companyName,
     active: input.active,
   })
 }
