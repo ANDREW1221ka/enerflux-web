@@ -1,11 +1,14 @@
 import { collection, getDocs, type QueryDocumentSnapshot } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { AdminModal } from '../../components/admin/AdminModal'
+import { CompanyForm } from '../../components/admin/CompanyForm'
 import { UserForm, type UserFormValues } from '../../components/admin/UserForm'
 import { UsersTable } from '../../components/admin/UsersTable'
 import type { UserProfile } from '../../hooks/useAuth'
 import { createAdminUser, updateAdminUser } from '../../services/adminUsers'
+import { createCompany, listCompanies } from '../../services/companies'
 import { db } from '../../services/firebase'
+import type { Company, CreateCompanyPayload } from '../../types/companies'
 
 function normalizeUser(document: QueryDocumentSnapshot): UserProfile {
   const data = document.data() as Partial<UserProfile>
@@ -24,36 +27,65 @@ function normalizeUser(document: QueryDocumentSnapshot): UserProfile {
 
 export function AdminPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
 
   const [submitting, setSubmitting] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [editError, setEditError] = useState<string | null>(null)
+  const [companyError, setCompanyError] = useState<string | null>(null)
   const [createSource, setCreateSource] = useState<'api' | 'mock' | null>(null)
   const platformAdmin = users.find((user) => user.role === 'platform_admin') ?? null
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       setLoading(true)
 
       try {
-        const snapshot = await getDocs(collection(db, 'users'))
-        const mappedUsers = snapshot.docs.map(normalizeUser)
-        setUsers(mappedUsers)
+        const [usersSnapshot, companiesResult] = await Promise.all([
+          getDocs(collection(db, 'users')),
+          listCompanies(),
+        ])
+
+        setUsers(usersSnapshot.docs.map(normalizeUser))
+        setCompanies(companiesResult)
       } catch (error) {
-        console.error('No fue posible cargar el listado de usuarios.', error)
+        console.error('No fue posible cargar datos administrativos.', error)
         setUsers([])
+        setCompanies([])
       } finally {
         setLoading(false)
       }
     }
 
-    void fetchUsers()
+    void fetchData()
   }, [])
+
+  const handleCreateCompany = async (values: CreateCompanyPayload) => {
+    const created = await createCompany(values)
+    setCompanies((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name, 'es-CL')))
+    return created
+  }
+
+  const handleCreateCompanyFromSection = async (values: CreateCompanyPayload) => {
+    setSubmitting(true)
+    setCompanyError(null)
+
+    try {
+      await handleCreateCompany(values)
+      setIsCompanyModalOpen(false)
+    } catch (error) {
+      console.error('No fue posible crear la empresa.', error)
+      setCompanyError('No fue posible crear la empresa. Intenta nuevamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const handleCreateUser = async (values: UserFormValues) => {
     setSubmitting(true)
@@ -127,16 +159,28 @@ export function AdminPage() {
   return (
     <section className="admin-page">
       <header className="admin-page-header">
-        <h2>Administración de usuarios</h2>
-        <button
-          type="button"
-          onClick={() => {
-            setIsCreateModalOpen(true)
-            setCreateError(null)
-          }}
-        >
-          Crear usuario
-        </button>
+        <h2>Administración de usuarios y empresas</h2>
+        <div className="admin-page-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => {
+              setIsCompanyModalOpen(true)
+              setCompanyError(null)
+            }}
+          >
+            Nueva empresa
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsCreateModalOpen(true)
+              setCreateError(null)
+            }}
+          >
+            Crear usuario
+          </button>
+        </div>
       </header>
 
       {platformAdmin ? (
@@ -151,18 +195,66 @@ export function AdminPage() {
         </p>
       ) : null}
 
+      <section className="admin-companies-module">
+        <h3>Empresas registradas</h3>
+        {companies.length === 0 ? (
+          <p className="admin-flow-note">Aún no hay compañías registradas.</p>
+        ) : (
+          <div className="admin-table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>ID</th>
+                  <th>Estado</th>
+                  <th>Creada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {companies.map((company) => (
+                  <tr key={company.id}>
+                    <td>{company.name}</td>
+                    <td>{company.id}</td>
+                    <td>{company.active ? 'Activa' : 'Inactiva'}</td>
+                    <td>{company.createdAt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {isCompanyModalOpen ? (
+        <AdminModal
+          title="Nueva empresa"
+          description="Registra una empresa en la colección companies para usarla en usuarios cliente."
+          ariaLabel="Crear empresa"
+          onClose={() => setIsCompanyModalOpen(false)}
+        >
+          <CompanyForm
+            submitting={submitting}
+            serverError={companyError}
+            onCancel={() => setIsCompanyModalOpen(false)}
+            onSubmit={handleCreateCompanyFromSection}
+          />
+        </AdminModal>
+      ) : null}
+
       {isCreateModalOpen ? (
         <AdminModal
           title="Crear usuario"
-          description="Crea usuarios cliente por empresa y define sus permisos internos."
+          description="Crea usuarios cliente asociados a una empresa existente."
           ariaLabel="Crear usuario"
           onClose={() => setIsCreateModalOpen(false)}
         >
           <UserForm
+            companies={companies}
             platformAdminExists={platformAdmin !== null}
             submitting={submitting}
             serverError={createError}
             onCancel={() => setIsCreateModalOpen(false)}
+            onCreateCompany={handleCreateCompany}
             onSubmit={handleCreateUser}
           />
         </AdminModal>
@@ -176,6 +268,7 @@ export function AdminPage() {
           onClose={() => setIsEditModalOpen(false)}
         >
           <UserForm
+            companies={companies}
             defaultValues={selectedUser}
             platformAdminExists={platformAdmin !== null}
             emailDisabled
@@ -184,6 +277,7 @@ export function AdminPage() {
             serverError={editError}
             submitLabel="Guardar cambios"
             onCancel={() => setIsEditModalOpen(false)}
+            onCreateCompany={handleCreateCompany}
             onSubmit={handleEditUser}
           />
         </AdminModal>

@@ -1,9 +1,13 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import type { CreateUserPayload } from '../../types/adminUsers'
+import type { Company, CreateCompanyPayload } from '../../types/companies'
+import { CompanyForm } from './CompanyForm'
+import { CompanySelect } from './CompanySelect'
 
 export type UserFormValues = CreateUserPayload
 
 type UserFormProps = {
+  companies: Company[]
   defaultValues?: Partial<UserFormValues>
   platformAdminExists?: boolean
   submitting?: boolean
@@ -12,6 +16,7 @@ type UserFormProps = {
   emailDisabled?: boolean
   roleDisabled?: boolean
   onCancel: () => void
+  onCreateCompany: (values: CreateCompanyPayload) => Promise<Company>
   onSubmit: (values: UserFormValues) => Promise<void>
 }
 
@@ -34,7 +39,7 @@ function normalizeValues(defaultValues?: Partial<UserFormValues>): UserFormValue
   }
 }
 
-function validate(values: UserFormValues): UserFormErrors {
+function validate(values: UserFormValues, companies: Company[]): UserFormErrors {
   const errors: UserFormErrors = {}
 
   if (!values.displayName.trim()) {
@@ -53,11 +58,9 @@ function validate(values: UserFormValues): UserFormErrors {
 
   if (values.role === 'client_user') {
     if (!values.companyId.trim()) {
-      errors.companyId = 'El ID de empresa es obligatorio.'
-    }
-
-    if (!values.companyName.trim()) {
-      errors.companyName = 'La empresa es obligatoria.'
+      errors.companyId = 'La empresa es obligatoria para usuarios cliente.'
+    } else if (!companies.some((company) => company.id === values.companyId)) {
+      errors.companyId = 'Selecciona una empresa válida.'
     }
   }
 
@@ -65,6 +68,7 @@ function validate(values: UserFormValues): UserFormErrors {
 }
 
 export function UserForm({
+  companies,
   defaultValues,
   platformAdminExists = false,
   submitting = false,
@@ -73,15 +77,24 @@ export function UserForm({
   emailDisabled = false,
   roleDisabled = false,
   onCancel,
+  onCreateCompany,
   onSubmit,
 }: UserFormProps) {
   const [values, setValues] = useState<UserFormValues>(normalizeValues(defaultValues))
   const [errors, setErrors] = useState<UserFormErrors>({})
+  const [showCompanyForm, setShowCompanyForm] = useState(false)
+  const [creatingCompany, setCreatingCompany] = useState(false)
+  const [createCompanyError, setCreateCompanyError] = useState<string | null>(null)
+
+  const selectedCompany = useMemo(
+    () => companies.find((company) => company.id === values.companyId) ?? null,
+    [companies, values.companyId],
+  )
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const nextErrors = validate(values)
+    const nextErrors = validate(values, companies)
     setErrors(nextErrors)
 
     if (Object.keys(nextErrors).length > 0) {
@@ -93,10 +106,36 @@ export function UserForm({
       email: values.email.trim().toLowerCase(),
       role: values.role,
       clientRole: values.role === 'platform_admin' ? 'client_monitor' : values.clientRole,
-      companyId: values.role === 'platform_admin' ? '' : values.companyId.trim(),
-      companyName: values.role === 'platform_admin' ? '' : values.companyName.trim(),
+      companyId: values.role === 'platform_admin' ? '' : values.companyId,
+      companyName: values.role === 'platform_admin' ? '' : selectedCompany?.name ?? values.companyName,
       active: values.active,
     })
+  }
+
+  const handleCompanySelection = (companyId: string) => {
+    const company = companies.find((item) => item.id === companyId)
+
+    setValues((current) => ({
+      ...current,
+      companyId,
+      companyName: company?.name ?? '',
+    }))
+  }
+
+  const handleCreateCompany = async (payload: CreateCompanyPayload) => {
+    setCreatingCompany(true)
+    setCreateCompanyError(null)
+
+    try {
+      const createdCompany = await onCreateCompany(payload)
+      handleCompanySelection(createdCompany.id)
+      setShowCompanyForm(false)
+    } catch (error) {
+      console.error('No fue posible crear la empresa.', error)
+      setCreateCompanyError('No fue posible crear la empresa. Intenta nuevamente.')
+    } finally {
+      setCreatingCompany(false)
+    }
   }
 
   const allowPlatformAdminOption = values.role === 'platform_admin' || !platformAdminExists
@@ -161,29 +200,27 @@ export function UserForm({
         </select>
       </label>
 
-      <label>
-        Empresa (ID)
-        <input
-          type="text"
-          value={values.companyId}
-          disabled={!isClientUser}
-          onChange={(event) => setValues((current) => ({ ...current, companyId: event.target.value }))}
-          placeholder="empresa-001"
-        />
-        {errors.companyId ? <span className="form-error">{errors.companyId}</span> : null}
-      </label>
+      <CompanySelect
+        companies={companies}
+        value={values.companyId}
+        disabled={!isClientUser}
+        error={errors.companyId}
+        onChange={handleCompanySelection}
+        onCreateCompany={() => {
+          setShowCompanyForm((current) => !current)
+          setCreateCompanyError(null)
+        }}
+      />
 
-      <label>
-        Empresa (Nombre)
-        <input
-          type="text"
-          value={values.companyName}
-          disabled={!isClientUser}
-          onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
-          placeholder="Nombre de empresa"
+      {showCompanyForm && isClientUser ? (
+        <CompanyForm
+          submitting={creatingCompany}
+          serverError={createCompanyError}
+          submitLabel="Crear y seleccionar"
+          onCancel={() => setShowCompanyForm(false)}
+          onSubmit={handleCreateCompany}
         />
-        {errors.companyName ? <span className="form-error">{errors.companyName}</span> : null}
-      </label>
+      ) : null}
 
       <label className="user-form-checkbox">
         <input
