@@ -1,16 +1,23 @@
 import { collection, getDocs, type QueryDocumentSnapshot } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
+import { AdminModal } from '../../components/admin/AdminModal'
 import { UserForm, type UserFormValues } from '../../components/admin/UserForm'
+import { UsersTable } from '../../components/admin/UsersTable'
 import type { UserProfile } from '../../hooks/useAuth'
-import { createAdminUser } from '../../services/adminUsers'
+import { createAdminUser, updateAdminUser } from '../../services/adminUsers'
 import { db } from '../../services/firebase'
 
 export function AdminPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
+
   const [submitting, setSubmitting] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+  const [editError, setEditError] = useState<string | null>(null)
   const [createSource, setCreateSource] = useState<'api' | 'mock' | null>(null)
 
   useEffect(() => {
@@ -56,10 +63,57 @@ export function AdminPage() {
       setIsCreateModalOpen(false)
     } catch (error) {
       console.error('No fue posible crear el usuario.', error)
-      setCreateError('No fue posible crear el usuario. Intenta nuevamente.')
+      setCreateError('No fue posible completar el alta visual. Intenta nuevamente.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleEditUser = async (values: UserFormValues) => {
+    if (!selectedUser) {
+      return
+    }
+
+    setSubmitting(true)
+    setEditError(null)
+
+    try {
+      await updateAdminUser({
+        uid: selectedUser.uid,
+        displayName: values.displayName,
+        companyName: values.companyName,
+        role: values.role,
+        active: values.active,
+      })
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          user.uid === selectedUser.uid
+            ? {
+                ...user,
+                displayName: values.displayName,
+                companyName: values.companyName,
+                role: values.role,
+                active: values.active,
+              }
+            : user,
+        ),
+      )
+
+      setIsEditModalOpen(false)
+      setSelectedUser(null)
+    } catch (error) {
+      console.error('No fue posible actualizar el usuario.', error)
+      setEditError('No fue posible guardar cambios. Intenta nuevamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const openEditModal = (user: UserProfile) => {
+    setSelectedUser(user)
+    setEditError(null)
+    setIsEditModalOpen(true)
   }
 
   return (
@@ -79,61 +133,46 @@ export function AdminPage() {
 
       {createSource ? (
         <p className="admin-flow-note">
-          Usuario creado usando modo <strong>{createSource}</strong>.
+          Alta visual completada en modo <strong>{createSource}</strong>. Firebase Auth se conectará en backend futuro.
         </p>
       ) : null}
 
       {isCreateModalOpen ? (
-        <div className="admin-modal-overlay" role="presentation" onClick={() => setIsCreateModalOpen(false)}>
-          <section
-            className="admin-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Crear usuario"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header>
-              <h3>Crear usuario cliente</h3>
-              <p>Este flujo prepara el alta vía endpoint seguro ({`POST /admin/create-user`}).</p>
-            </header>
-            <UserForm
-              submitting={submitting}
-              serverError={createError}
-              onCancel={() => setIsCreateModalOpen(false)}
-              onSubmit={handleCreateUser}
-            />
-          </section>
-        </div>
+        <AdminModal
+          title="Crear usuario cliente"
+          description="Completa datos para simular el flujo de alta. La creación real en Firebase Auth quedará para backend."
+          ariaLabel="Crear usuario"
+          onClose={() => setIsCreateModalOpen(false)}
+        >
+          <UserForm
+            submitting={submitting}
+            serverError={createError}
+            onCancel={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreateUser}
+          />
+        </AdminModal>
       ) : null}
 
-      {loading ? (
-        <p>Cargando usuarios...</p>
-      ) : (
-        <div className="admin-table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Empresa</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.uid}>
-                  <td>{user.displayName}</td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>{user.companyName}</td>
-                  <td>{user.active ? 'Activo' : 'Inactivo'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {isEditModalOpen && selectedUser ? (
+        <AdminModal
+          title="Editar usuario"
+          description="Actualiza datos del perfil almacenado en Firestore."
+          ariaLabel="Editar usuario"
+          onClose={() => setIsEditModalOpen(false)}
+        >
+          <UserForm
+            defaultValues={selectedUser}
+            emailDisabled
+            submitting={submitting}
+            serverError={editError}
+            submitLabel="Guardar cambios"
+            onCancel={() => setIsEditModalOpen(false)}
+            onSubmit={handleEditUser}
+          />
+        </AdminModal>
+      ) : null}
+
+      {loading ? <p>Cargando usuarios...</p> : <UsersTable users={users} onEditUser={openEditModal} />}
     </section>
   )
 }

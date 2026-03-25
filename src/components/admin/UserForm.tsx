@@ -8,6 +8,7 @@ type UserFormProps = {
   submitting?: boolean
   serverError?: string | null
   submitLabel?: string
+  emailDisabled?: boolean
   onCancel: () => void
   onSubmit: (values: UserFormValues) => Promise<void>
 }
@@ -58,6 +59,7 @@ export function UserForm({
   submitting = false,
   serverError = null,
   submitLabel = 'Crear usuario',
+  emailDisabled = false,
   onCancel,
   onSubmit,
 }: UserFormProps) {
@@ -101,6 +103,7 @@ export function UserForm({
         <input
           type="email"
           value={values.email}
+          disabled={emailDisabled}
           onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
           placeholder="usuario@empresa.cl"
         />
@@ -150,7 +153,7 @@ export function UserForm({
           Cancelar
         </button>
         <button type="submit" disabled={submitting}>
-          {submitting ? 'Creando...' : submitLabel}
+          {submitting ? 'Guardando...' : submitLabel}
         </button>
       </footer>
     </form>
