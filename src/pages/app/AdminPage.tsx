@@ -2,13 +2,17 @@ import { collection, getDocs, type QueryDocumentSnapshot } from 'firebase/firest
 import { useEffect, useState } from 'react'
 import { AdminModal } from '../../components/admin/AdminModal'
 import { CompanyForm } from '../../components/admin/CompanyForm'
+import { InstallationForm, type InstallationFormValues } from '../../components/admin/InstallationForm'
+import { InstallationsTable } from '../../components/admin/InstallationsTable'
 import { UserForm, type UserFormValues } from '../../components/admin/UserForm'
 import { UsersTable } from '../../components/admin/UsersTable'
 import type { UserProfile } from '../../hooks/useAuth'
 import { createAdminUser, updateAdminUser } from '../../services/adminUsers'
 import { createCompany, listCompanies } from '../../services/companies'
+import { createInstallation, listInstallations, updateInstallation } from '../../services/installations'
 import { db } from '../../services/firebase'
 import type { Company, CreateCompanyPayload } from '../../types/companies'
+import type { Installation } from '../../types/installations'
 
 function normalizeUser(document: QueryDocumentSnapshot): UserProfile {
   const data = document.data() as Partial<UserProfile>
@@ -28,17 +32,25 @@ function normalizeUser(document: QueryDocumentSnapshot): UserProfile {
 export function AdminPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [installations, setInstallations] = useState<Installation[]>([])
   const [loading, setLoading] = useState(true)
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
+  const [isInstallationCreateModalOpen, setIsInstallationCreateModalOpen] = useState(false)
+  const [isInstallationEditModalOpen, setIsInstallationEditModalOpen] = useState(false)
+
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
+  const [selectedInstallation, setSelectedInstallation] = useState<Installation | null>(null)
 
   const [submitting, setSubmitting] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [editError, setEditError] = useState<string | null>(null)
   const [companyError, setCompanyError] = useState<string | null>(null)
+  const [installationCreateError, setInstallationCreateError] = useState<string | null>(null)
+  const [installationEditError, setInstallationEditError] = useState<string | null>(null)
+
   const [createSource, setCreateSource] = useState<'api' | 'mock' | null>(null)
   const platformAdmin = users.find((user) => user.role === 'platform_admin') ?? null
 
@@ -47,17 +59,20 @@ export function AdminPage() {
       setLoading(true)
 
       try {
-        const [usersSnapshot, companiesResult] = await Promise.all([
+        const [usersSnapshot, companiesResult, installationsResult] = await Promise.all([
           getDocs(collection(db, 'users')),
           listCompanies(),
+          listInstallations(),
         ])
 
         setUsers(usersSnapshot.docs.map(normalizeUser))
         setCompanies(companiesResult)
+        setInstallations(installationsResult)
       } catch (error) {
         console.error('No fue posible cargar datos administrativos.', error)
         setUsers([])
         setCompanies([])
+        setInstallations([])
       } finally {
         setLoading(false)
       }
@@ -150,10 +165,67 @@ export function AdminPage() {
     }
   }
 
+  const handleCreateInstallation = async (values: InstallationFormValues) => {
+    setSubmitting(true)
+    setInstallationCreateError(null)
+
+    try {
+      const createdInstallation = await createInstallation(values)
+
+      setInstallations((currentInstallations) =>
+        [...currentInstallations, createdInstallation].sort((a, b) => a.name.localeCompare(b.name, 'es-CL')),
+      )
+      setIsInstallationCreateModalOpen(false)
+    } catch (error) {
+      console.error('No fue posible crear la instalación.', error)
+      setInstallationCreateError('No fue posible crear la instalación. Intenta nuevamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleEditInstallation = async (values: InstallationFormValues) => {
+    if (!selectedInstallation) {
+      return
+    }
+
+    setSubmitting(true)
+    setInstallationEditError(null)
+
+    try {
+      await updateInstallation({
+        id: selectedInstallation.id,
+        ...values,
+      })
+
+      setInstallations((currentInstallations) =>
+        currentInstallations
+          .map((installation) =>
+            installation.id === selectedInstallation.id ? { ...installation, ...values } : installation,
+          )
+          .sort((a, b) => a.name.localeCompare(b.name, 'es-CL')),
+      )
+
+      setIsInstallationEditModalOpen(false)
+      setSelectedInstallation(null)
+    } catch (error) {
+      console.error('No fue posible editar la instalación.', error)
+      setInstallationEditError('No fue posible guardar cambios en la instalación. Intenta nuevamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const openEditModal = (user: UserProfile) => {
     setSelectedUser(user)
     setEditError(null)
     setIsEditModalOpen(true)
+  }
+
+  const openEditInstallationModal = (installation: Installation) => {
+    setSelectedInstallation(installation)
+    setInstallationEditError(null)
+    setIsInstallationEditModalOpen(true)
   }
 
   return (
@@ -225,6 +297,22 @@ export function AdminPage() {
         )}
       </section>
 
+      <section className="admin-installations-module">
+        <header className="admin-module-header">
+          <h3>Instalaciones</h3>
+          <button
+            type="button"
+            onClick={() => {
+              setIsInstallationCreateModalOpen(true)
+              setInstallationCreateError(null)
+            }}
+          >
+            Crear instalación
+          </button>
+        </header>
+        <InstallationsTable installations={installations} onEditInstallation={openEditInstallationModal} />
+      </section>
+
       {isCompanyModalOpen ? (
         <AdminModal
           title="Nueva empresa"
@@ -283,7 +371,43 @@ export function AdminPage() {
         </AdminModal>
       ) : null}
 
-      {loading ? <p>Cargando usuarios...</p> : <UsersTable users={users} onEditUser={openEditModal} />}
+      {isInstallationCreateModalOpen ? (
+        <AdminModal
+          title="Crear instalación"
+          description="Registra una instalación y asóciala a una empresa para habilitar el monitoreo."
+          ariaLabel="Crear instalación"
+          onClose={() => setIsInstallationCreateModalOpen(false)}
+        >
+          <InstallationForm
+            companies={companies}
+            submitting={submitting}
+            serverError={installationCreateError}
+            onCancel={() => setIsInstallationCreateModalOpen(false)}
+            onSubmit={handleCreateInstallation}
+          />
+        </AdminModal>
+      ) : null}
+
+      {isInstallationEditModalOpen && selectedInstallation ? (
+        <AdminModal
+          title="Editar instalación"
+          description="Actualiza los datos base de la instalación en Firestore."
+          ariaLabel="Editar instalación"
+          onClose={() => setIsInstallationEditModalOpen(false)}
+        >
+          <InstallationForm
+            companies={companies}
+            defaultValues={selectedInstallation}
+            submitting={submitting}
+            serverError={installationEditError}
+            submitLabel="Guardar cambios"
+            onCancel={() => setIsInstallationEditModalOpen(false)}
+            onSubmit={handleEditInstallation}
+          />
+        </AdminModal>
+      ) : null}
+
+      {loading ? <p>Cargando usuarios e instalaciones...</p> : <UsersTable users={users} onEditUser={openEditModal} />}
     </section>
   )
 }
