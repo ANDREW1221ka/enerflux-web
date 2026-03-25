@@ -34,6 +34,7 @@ export function AdminPage() {
   const [createError, setCreateError] = useState<string | null>(null)
   const [editError, setEditError] = useState<string | null>(null)
   const [createSource, setCreateSource] = useState<'api' | 'mock' | null>(null)
+  const platformAdmin = users.find((user) => user.role === 'platform_admin') ?? null
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -138,6 +139,12 @@ export function AdminPage() {
         </button>
       </header>
 
+      {platformAdmin ? (
+        <p className="admin-flow-note">
+          Administrador global único: <strong>{platformAdmin.displayName}</strong> ({platformAdmin.email}).
+        </p>
+      ) : null}
+
       {createSource ? (
         <p className="admin-flow-note">
           Alta visual completada en modo <strong>{createSource}</strong>. Firebase Auth se conectará en backend futuro.
@@ -147,11 +154,12 @@ export function AdminPage() {
       {isCreateModalOpen ? (
         <AdminModal
           title="Crear usuario"
-          description="Define rol de plataforma, rol de cliente y empresa para el nuevo usuario."
+          description="Crea usuarios cliente por empresa y define sus permisos internos."
           ariaLabel="Crear usuario"
           onClose={() => setIsCreateModalOpen(false)}
         >
           <UserForm
+            platformAdminExists={platformAdmin !== null}
             submitting={submitting}
             serverError={createError}
             onCancel={() => setIsCreateModalOpen(false)}
@@ -169,7 +177,9 @@ export function AdminPage() {
         >
           <UserForm
             defaultValues={selectedUser}
+            platformAdminExists={platformAdmin !== null}
             emailDisabled
+            roleDisabled={selectedUser.role === 'platform_admin'}
             submitting={submitting}
             serverError={editError}
             submitLabel="Guardar cambios"

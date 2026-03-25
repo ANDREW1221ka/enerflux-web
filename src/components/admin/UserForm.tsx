@@ -5,10 +5,12 @@ export type UserFormValues = CreateUserPayload
 
 type UserFormProps = {
   defaultValues?: Partial<UserFormValues>
+  platformAdminExists?: boolean
   submitting?: boolean
   serverError?: string | null
   submitLabel?: string
   emailDisabled?: boolean
+  roleDisabled?: boolean
   onCancel: () => void
   onSubmit: (values: UserFormValues) => Promise<void>
 }
@@ -49,12 +51,14 @@ function validate(values: UserFormValues): UserFormErrors {
     }
   }
 
-  if (!values.companyId.trim()) {
-    errors.companyId = 'El ID de empresa es obligatorio.'
-  }
+  if (values.role === 'client_user') {
+    if (!values.companyId.trim()) {
+      errors.companyId = 'El ID de empresa es obligatorio.'
+    }
 
-  if (!values.companyName.trim()) {
-    errors.companyName = 'La empresa es obligatoria.'
+    if (!values.companyName.trim()) {
+      errors.companyName = 'La empresa es obligatoria.'
+    }
   }
 
   return errors
@@ -62,10 +66,12 @@ function validate(values: UserFormValues): UserFormErrors {
 
 export function UserForm({
   defaultValues,
+  platformAdminExists = false,
   submitting = false,
   serverError = null,
   submitLabel = 'Crear usuario',
   emailDisabled = false,
+  roleDisabled = false,
   onCancel,
   onSubmit,
 }: UserFormProps) {
@@ -86,12 +92,15 @@ export function UserForm({
       displayName: values.displayName.trim(),
       email: values.email.trim().toLowerCase(),
       role: values.role,
-      clientRole: values.clientRole,
-      companyId: values.companyId.trim(),
-      companyName: values.companyName.trim(),
+      clientRole: values.role === 'platform_admin' ? 'client_monitor' : values.clientRole,
+      companyId: values.role === 'platform_admin' ? '' : values.companyId.trim(),
+      companyName: values.role === 'platform_admin' ? '' : values.companyName.trim(),
       active: values.active,
     })
   }
+
+  const allowPlatformAdminOption = values.role === 'platform_admin' || !platformAdminExists
+  const isClientUser = values.role === 'client_user'
 
   return (
     <form className="user-form" onSubmit={(event) => void handleSubmit(event)}>
@@ -122,6 +131,7 @@ export function UserForm({
         Rol de plataforma
         <select
           value={values.role}
+          disabled={roleDisabled}
           onChange={(event) =>
             setValues((current) => ({
               ...current,
@@ -130,7 +140,7 @@ export function UserForm({
           }
         >
           <option value="client_user">Cliente</option>
-          <option value="platform_admin">Administrador de plataforma</option>
+          {allowPlatformAdminOption ? <option value="platform_admin">Administrador de plataforma</option> : null}
         </select>
       </label>
 
@@ -156,6 +166,7 @@ export function UserForm({
         <input
           type="text"
           value={values.companyId}
+          disabled={!isClientUser}
           onChange={(event) => setValues((current) => ({ ...current, companyId: event.target.value }))}
           placeholder="empresa-001"
         />
@@ -167,6 +178,7 @@ export function UserForm({
         <input
           type="text"
           value={values.companyName}
+          disabled={!isClientUser}
           onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
           placeholder="Nombre de empresa"
         />
