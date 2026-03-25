@@ -18,8 +18,10 @@ type UserFormErrors = Partial<Record<keyof UserFormValues, string>>
 const INITIAL_VALUES: UserFormValues = {
   displayName: '',
   email: '',
+  role: 'client_user',
+  clientRole: 'client_monitor',
+  companyId: '',
   companyName: '',
-  role: 'client',
   active: true,
 }
 
@@ -45,6 +47,10 @@ function validate(values: UserFormValues): UserFormErrors {
     if (!emailPattern.test(values.email.trim())) {
       errors.email = 'Ingresa un email válido.'
     }
+  }
+
+  if (!values.companyId.trim()) {
+    errors.companyId = 'El ID de empresa es obligatorio.'
   }
 
   if (!values.companyName.trim()) {
@@ -79,8 +85,10 @@ export function UserForm({
     await onSubmit({
       displayName: values.displayName.trim(),
       email: values.email.trim().toLowerCase(),
-      companyName: values.companyName.trim(),
       role: values.role,
+      clientRole: values.clientRole,
+      companyId: values.companyId.trim(),
+      companyName: values.companyName.trim(),
       active: values.active,
     })
   }
@@ -111,7 +119,51 @@ export function UserForm({
       </label>
 
       <label>
-        Empresa
+        Rol de plataforma
+        <select
+          value={values.role}
+          onChange={(event) =>
+            setValues((current) => ({
+              ...current,
+              role: event.target.value === 'platform_admin' ? 'platform_admin' : 'client_user',
+            }))
+          }
+        >
+          <option value="client_user">Cliente</option>
+          <option value="platform_admin">Administrador de plataforma</option>
+        </select>
+      </label>
+
+      <label>
+        Rol cliente
+        <select
+          value={values.clientRole}
+          onChange={(event) =>
+            setValues((current) => ({
+              ...current,
+              clientRole: event.target.value === 'client_admin' ? 'client_admin' : 'client_monitor',
+            }))
+          }
+          disabled={values.role === 'platform_admin'}
+        >
+          <option value="client_admin">Administrador cliente</option>
+          <option value="client_monitor">Monitor cliente</option>
+        </select>
+      </label>
+
+      <label>
+        Empresa (ID)
+        <input
+          type="text"
+          value={values.companyId}
+          onChange={(event) => setValues((current) => ({ ...current, companyId: event.target.value }))}
+          placeholder="empresa-001"
+        />
+        {errors.companyId ? <span className="form-error">{errors.companyId}</span> : null}
+      </label>
+
+      <label>
+        Empresa (Nombre)
         <input
           type="text"
           value={values.companyName}
@@ -119,22 +171,6 @@ export function UserForm({
           placeholder="Nombre de empresa"
         />
         {errors.companyName ? <span className="form-error">{errors.companyName}</span> : null}
-      </label>
-
-      <label>
-        Rol
-        <select
-          value={values.role}
-          onChange={(event) =>
-            setValues((current) => ({
-              ...current,
-              role: event.target.value === 'admin' ? 'admin' : 'client',
-            }))
-          }
-        >
-          <option value="client">Cliente</option>
-          <option value="admin">Administrador</option>
-        </select>
       </label>
 
       <label className="user-form-checkbox">

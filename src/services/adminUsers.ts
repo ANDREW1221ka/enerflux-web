@@ -18,6 +18,8 @@ function toUserProfile(uid: string, input: CreateUserRequest): UserProfile {
     email: input.email,
     displayName: input.displayName,
     role: input.role,
+    clientRole: input.clientRole,
+    companyId: input.companyId,
     companyName: input.companyName,
     active: input.active,
   }
@@ -57,9 +59,11 @@ export async function createAdminUser(payload: CreateUserRequest): Promise<Creat
         uid: data.user.uid ?? data.uid ?? `pending-${Date.now()}`,
         email: data.user.email ?? payload.email,
         displayName: data.user.displayName ?? payload.displayName,
-        role: data.user.role === 'admin' ? 'admin' : payload.role,
+        role: data.user.role === 'platform_admin' ? 'platform_admin' : payload.role,
+        clientRole: data.user.clientRole === 'client_admin' ? 'client_admin' : payload.clientRole,
+        companyId: data.user.companyId ?? payload.companyId,
         companyName: data.user.companyName ?? payload.companyName,
-        active: data.user.active === true,
+        active: data.user.active ?? payload.active,
       },
       source: 'api',
     }
@@ -74,8 +78,10 @@ export async function createAdminUser(payload: CreateUserRequest): Promise<Creat
 type UpdateAdminUserInput = {
   uid: string
   displayName: string
-  companyName: string
   role: UserProfile['role']
+  clientRole: UserProfile['clientRole']
+  companyId: string
+  companyName: string
   active: boolean
 }
 
@@ -84,8 +90,10 @@ export async function updateAdminUser(input: UpdateAdminUserInput): Promise<void
 
   await updateDoc(reference, {
     displayName: input.displayName,
-    companyName: input.companyName,
     role: input.role,
+    clientRole: input.clientRole,
+    companyId: input.companyId,
+    companyName: input.companyName,
     active: input.active,
   })
 }

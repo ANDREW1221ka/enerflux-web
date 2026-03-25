@@ -16,13 +16,16 @@ import {
 } from 'react'
 import { auth, db, ensureAuthPersistence } from '../services/firebase'
 
-export type UserRole = 'admin' | 'client'
+export type UserRole = 'platform_admin' | 'client_user'
+export type ClientRole = 'client_admin' | 'client_monitor'
 
 export type UserProfile = {
   uid: string
   email: string
   displayName: string
   role: UserRole
+  clientRole: ClientRole
+  companyId: string
   companyName: string
   active: boolean
 }
@@ -37,12 +40,22 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+function normalizeRole(role: string | undefined): UserRole {
+  return role === 'platform_admin' ? 'platform_admin' : 'client_user'
+}
+
+function normalizeClientRole(clientRole: string | undefined): ClientRole {
+  return clientRole === 'client_admin' ? 'client_admin' : 'client_monitor'
+}
+
 function normalizeProfile(uid: string, data: Partial<UserProfile>): UserProfile {
   return {
     uid,
     email: data.email ?? '',
     displayName: data.displayName ?? 'Usuario Enerflux',
-    role: data.role === 'admin' ? 'admin' : 'client',
+    role: normalizeRole(data.role),
+    clientRole: normalizeClientRole(data.clientRole),
+    companyId: data.companyId ?? '',
     companyName: data.companyName ?? 'Sin empresa',
     active: data.active === true,
   }
