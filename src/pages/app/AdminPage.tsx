@@ -2,7 +2,7 @@ import { collection, getDocs, type QueryDocumentSnapshot } from 'firebase/firest
 import { useEffect, useState } from 'react'
 import { AdminModal } from '../../components/admin/AdminModal'
 import { CompanyForm } from '../../components/admin/CompanyForm'
-import { InstallationForm, type InstallationFormValues } from '../../components/admin/InstallationForm'
+import { InstallationForm } from '../../components/admin/InstallationForm'
 import { InstallationsTable } from '../../components/admin/InstallationsTable'
 import { UserForm, type UserFormValues } from '../../components/admin/UserForm'
 import { UsersTable } from '../../components/admin/UsersTable'
@@ -12,7 +12,7 @@ import { createCompany, listCompanies } from '../../services/companies'
 import { createInstallation, listInstallations, updateInstallation } from '../../services/installations'
 import { db } from '../../services/firebase'
 import type { Company, CreateCompanyPayload } from '../../types/companies'
-import type { Installation } from '../../types/installations'
+import type { CreateInstallationPayload, Installation } from '../../types/installations'
 
 function normalizeUser(document: QueryDocumentSnapshot): UserProfile {
   const data = document.data() as Partial<UserProfile>
@@ -165,12 +165,15 @@ export function AdminPage() {
     }
   }
 
-  const handleCreateInstallation = async (values: InstallationFormValues) => {
+  const handleCreateInstallation = async (values: CreateInstallationPayload) => {
     setSubmitting(true)
     setInstallationCreateError(null)
 
     try {
-      const createdInstallation = await createInstallation(values)
+      const createdInstallation = await createInstallation({
+        ...values,
+        createdBy: 'platform_admin',
+      })
 
       setInstallations((currentInstallations) =>
         [...currentInstallations, createdInstallation].sort((a, b) => a.name.localeCompare(b.name, 'es-CL')),
@@ -184,7 +187,7 @@ export function AdminPage() {
     }
   }
 
-  const handleEditInstallation = async (values: InstallationFormValues) => {
+  const handleEditInstallation = async (values: CreateInstallationPayload) => {
     if (!selectedInstallation) {
       return
     }
@@ -193,9 +196,16 @@ export function AdminPage() {
     setInstallationEditError(null)
 
     try {
+      if (!selectedInstallation.id) {
+        throw new Error('La instalación seleccionada no tiene identificador.')
+      }
+
       await updateInstallation({
         id: selectedInstallation.id,
         ...values,
+        createdBy: selectedInstallation.createdBy ?? 'platform_admin',
+        capabilities: selectedInstallation.capabilities,
+        technical: selectedInstallation.technical,
       })
 
       setInstallations((currentInstallations) =>
@@ -397,7 +407,18 @@ export function AdminPage() {
         >
           <InstallationForm
             companies={companies}
-            defaultValues={selectedInstallation}
+            defaultValues={{
+              name: selectedInstallation.name,
+              companyId: selectedInstallation.companyId,
+              companyName: selectedInstallation.companyName,
+              category: selectedInstallation.category,
+              type: selectedInstallation.type,
+              subtype: selectedInstallation.subtype ?? '',
+              description: selectedInstallation.description ?? '',
+              location: selectedInstallation.location?.address ?? '',
+              active: selectedInstallation.active,
+              clientVisible: selectedInstallation.clientVisible,
+            }}
             submitting={submitting}
             serverError={installationEditError}
             submitLabel="Guardar cambios"

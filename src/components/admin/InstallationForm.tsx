@@ -1,8 +1,24 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { Company } from '../../types/companies'
-import type { CreateInstallationPayload } from '../../types/installations'
+import {
+  DEFAULT_INSTALLATION_CAPABILITIES,
+  INSTALLATION_CATEGORIES,
+  INSTALLATION_TYPES,
+  type CreateInstallationPayload,
+} from '../../types/installations'
 
-export type InstallationFormValues = CreateInstallationPayload
+export type InstallationFormValues = {
+  name: string
+  companyId: string
+  companyName: string
+  category: CreateInstallationPayload['category']
+  type: CreateInstallationPayload['type']
+  subtype: string
+  location: string
+  description: string
+  active: boolean
+  clientVisible: boolean
+}
 
 type InstallationFormProps = {
   companies: Company[]
@@ -11,7 +27,7 @@ type InstallationFormProps = {
   serverError?: string | null
   submitLabel?: string
   onCancel: () => void
-  onSubmit: (values: InstallationFormValues) => Promise<void>
+  onSubmit: (values: CreateInstallationPayload) => Promise<void>
 }
 
 type InstallationFormErrors = Partial<Record<keyof InstallationFormValues, string>>
@@ -20,9 +36,13 @@ const INITIAL_VALUES: InstallationFormValues = {
   name: '',
   companyId: '',
   companyName: '',
-  type: '',
+  category: 'custom',
+  type: 'custom',
+  subtype: '',
   location: '',
+  description: '',
   active: true,
+  clientVisible: true,
 }
 
 function normalizeValues(defaultValues?: Partial<InstallationFormValues>): InstallationFormValues {
@@ -87,9 +107,16 @@ export function InstallationForm({
       name: values.name.trim(),
       companyId: values.companyId,
       companyName: selectedCompany?.name ?? values.companyName,
-      type: values.type.trim(),
-      location: values.location.trim(),
+      category: values.category,
+      type: values.type,
+      subtype: values.subtype.trim() || undefined,
+      location: {
+        address: values.location.trim(),
+      },
+      description: values.description.trim() || undefined,
       active: values.active,
+      clientVisible: values.clientVisible,
+      capabilities: DEFAULT_INSTALLATION_CAPABILITIES,
     })
   }
 
@@ -117,13 +144,35 @@ export function InstallationForm({
       </label>
 
       <label>
+        Categoría
+        <select
+          value={values.category}
+          onChange={(event) =>
+            setValues((current) => ({ ...current, category: event.target.value as InstallationFormValues['category'] }))
+          }
+        >
+          {INSTALLATION_CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
         Tipo
-        <input
-          type="text"
+        <select
           value={values.type}
-          onChange={(event) => setValues((current) => ({ ...current, type: event.target.value }))}
-          placeholder="Solar fotovoltaica"
-        />
+          onChange={(event) =>
+            setValues((current) => ({ ...current, type: event.target.value as InstallationFormValues['type'] }))
+          }
+        >
+          {INSTALLATION_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
         {errors.type ? <span className="form-error">{errors.type}</span> : null}
       </label>
 
@@ -136,6 +185,25 @@ export function InstallationForm({
           placeholder="Quilicura, RM"
         />
         {errors.location ? <span className="form-error">{errors.location}</span> : null}
+      </label>
+
+      <label>
+        Subtipo (opcional)
+        <input
+          type="text"
+          value={values.subtype}
+          onChange={(event) => setValues((current) => ({ ...current, subtype: event.target.value }))}
+          placeholder="Ej: Sala de bombas principal"
+        />
+      </label>
+
+      <label>
+        Descripción (opcional)
+        <textarea
+          value={values.description}
+          onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
+          placeholder="Detalle funcional de la instalación"
+        />
       </label>
 
       <label>
@@ -158,6 +226,14 @@ export function InstallationForm({
           onChange={(event) => setValues((current) => ({ ...current, active: event.target.checked }))}
         />
         Activa
+      </label>
+      <label className="user-form-checkbox">
+        <input
+          type="checkbox"
+          checked={values.clientVisible}
+          onChange={(event) => setValues((current) => ({ ...current, clientVisible: event.target.checked }))}
+        />
+        Visible para cliente
       </label>
 
       {serverError ? <p className="form-error">{serverError}</p> : null}

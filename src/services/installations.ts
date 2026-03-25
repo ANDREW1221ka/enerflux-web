@@ -6,23 +6,40 @@ import {
   getDocs,
   orderBy,
   query,
+  setDoc,
   serverTimestamp,
   updateDoc,
   where,
   type QueryDocumentSnapshot,
   type Timestamp,
 } from 'firebase/firestore'
-import type { CreateInstallationPayload, Installation, UpdateInstallationPayload } from '../types/installations'
+import {
+  DEFAULT_INSTALLATION_CAPABILITIES,
+  formatInstallationLocation,
+  type CreateInstallationPayload,
+  type Installation,
+  type InstallationCategory,
+  type InstallationRealtimeCurrent,
+  type InstallationType,
+  type UpdateInstallationPayload,
+} from '../types/installations'
 import { db } from './firebase'
 
 type InstallationDocument = Partial<{
   name: string
   companyId: string
   companyName: string
-  type: string
-  location: string
+  category: InstallationCategory
+  type: InstallationType
+  subtype: string
+  location: Installation['location']
+  description: string
   active: boolean
+  clientVisible: boolean
+  capabilities: Installation['capabilities']
+  technical: Installation['technical']
   createdAt: Timestamp
+  createdBy: string
 }>
 
 function formatCreatedAt(createdAt: Timestamp | null | undefined): string {
@@ -41,10 +58,17 @@ function normalizeInstallation(document: QueryDocumentSnapshot): Installation {
     name: data.name ?? 'Sin nombre',
     companyId: data.companyId ?? '',
     companyName: data.companyName ?? 'Sin empresa',
-    type: data.type ?? 'Sin tipo',
-    location: data.location ?? 'Sin ubicación',
+    category: data.category ?? 'custom',
+    type: data.type ?? 'custom',
+    subtype: data.subtype,
+    location: data.location,
+    description: data.description,
     active: data.active === true,
+    clientVisible: data.clientVisible !== false,
+    capabilities: data.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES,
+    technical: data.technical,
     createdAt: formatCreatedAt(data.createdAt),
+    createdBy: data.createdBy,
   }
 }
 
@@ -84,29 +108,51 @@ export async function listInstallationsByCompanyId(companyId: string): Promise<I
 
 export async function createInstallation(payload: CreateInstallationPayload): Promise<Installation> {
   assertValidPayload(payload)
+  const normalizedName = payload.name.trim()
+  const normalizedCompanyId = payload.companyId.trim()
+  const normalizedCompanyName = payload.companyName.trim()
+  const normalizedSubtype = payload.subtype?.trim() || undefined
+  const normalizedDescription = payload.description?.trim() || undefined
+  const normalizedCreatedBy = payload.createdBy?.trim() || 'platform_admin'
 
   const reference = await addDoc(collection(db, 'installations'), {
-    name: payload.name.trim(),
-    companyId: payload.companyId.trim(),
-    companyName: payload.companyName.trim(),
-    type: payload.type.trim(),
-    location: payload.location.trim(),
+    name: normalizedName,
+    companyId: normalizedCompanyId,
+    companyName: normalizedCompanyName,
+    category: payload.category,
+    type: payload.type,
+    subtype: normalizedSubtype,
+    location: payload.location,
+    description: normalizedDescription,
     active: payload.active,
+    clientVisible: payload.clientVisible,
+    capabilities: payload.capabilities,
+    technical: payload.technical,
+    createdBy: normalizedCreatedBy,
     createdAt: serverTimestamp(),
   })
+
+  await setRealtimeCurrentBase(reference.id, payload.realtimeCurrent)
 
   const snapshot = await getDoc(reference)
   const data = snapshot.data() as InstallationDocument | undefined
 
   return {
     id: reference.id,
-    name: data?.name ?? payload.name.trim(),
-    companyId: data?.companyId ?? payload.companyId.trim(),
-    companyName: data?.companyName ?? payload.companyName.trim(),
-    type: data?.type ?? payload.type.trim(),
-    location: data?.location ?? payload.location.trim(),
+    name: data?.name ?? normalizedName,
+    companyId: data?.companyId ?? normalizedCompanyId,
+    companyName: data?.companyName ?? normalizedCompanyName,
+    category: data?.category ?? payload.category,
+    type: data?.type ?? payload.type,
+    subtype: data?.subtype ?? normalizedSubtype,
+    location: data?.location ?? payload.location,
+    description: data?.description ?? normalizedDescription,
     active: data?.active ?? payload.active,
+    clientVisible: data?.clientVisible ?? payload.clientVisible,
+    capabilities: data?.capabilities ?? payload.capabilities,
+    technical: data?.technical ?? payload.technical,
     createdAt: formatCreatedAt(data?.createdAt),
+    createdBy: data?.createdBy ?? normalizedCreatedBy,
   }
 }
 
@@ -119,8 +165,29 @@ export async function updateInstallation(payload: UpdateInstallationPayload): Pr
     name: payload.name.trim(),
     companyId: payload.companyId.trim(),
     companyName: payload.companyName.trim(),
-    type: payload.type.trim(),
-    location: payload.location.trim(),
+    category: payload.category,
+    type: payload.type,
+    subtype: payload.subtype?.trim() || null,
+    location: payload.location ?? null,
+    description: payload.description?.trim() || null,
     active: payload.active,
+    clientVisible: payload.clientVisible,
+    capabilities: payload.capabilities,
+    technical: payload.technical ?? null,
+    createdBy: payload.createdBy?.trim() || null,
   })
+}
+
+export async function setRealtimeCurrentBase(installationId: string, current?: InstallationRealtimeCurrent): Promise<void> {
+  await setDoc(doc(db, 'installations', installationId, 'realtime', 'current'), {
+    connected: current?.connected ?? false,
+    lastTelemetryAt: current?.lastTelemetryAt ?? null,
+    activeAlarms: current?.activeAlarms ?? 0,
+    status: current?.status ?? 'idle',
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function getInstallationLocationLabel(installation: Installation): string {
+  return formatInstallationLocation(installation.location)
 }
