@@ -979,6 +979,23 @@ a {
   margin: 0 0 0.7rem;
 }
 
+
+.admin-installations-module {
+  margin-bottom: 1.2rem;
+}
+
+.admin-module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin: 0 0 0.7rem;
+}
+
+.admin-module-header h3 {
+  margin: 0;
+}
+
 .admin-modal-overlay {
   position: fixed;
   inset: 0;
