@@ -1,4 +1,5 @@
 import type { Installation } from '../../types/installations'
+import { formatInstallationLocation } from '../../types/installations'
 
 type InstallationCardProps = {
   installation: Installation
@@ -31,7 +32,7 @@ export function InstallationCard({ installation }: InstallationCardProps) {
         </div>
         <div>
           <dt>Ubicación</dt>
-          <dd>{formatLocation(installation)}</dd>
+          <dd>{formatInstallationLocation(installation.location)}</dd>
         </div>
       </dl>
     </article>

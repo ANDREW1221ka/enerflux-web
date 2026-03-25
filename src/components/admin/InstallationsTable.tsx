@@ -1,4 +1,5 @@
 import type { Installation } from '../../types/installations'
+import { formatInstallationLocation } from '../../types/installations'
 
 type InstallationsTableProps = {
   installations: Installation[]
@@ -40,7 +41,7 @@ export function InstallationsTable({ installations, onEditInstallation }: Instal
               <td>{installation.name}</td>
               <td>{installation.companyName}</td>
               <td>{installation.type}</td>
-              <td>{formatLocation(installation)}</td>
+              <td>{formatInstallationLocation(installation.location)}</td>
               <td>{installation.active ? 'Activa' : 'Inactiva'}</td>
               <td>
                 <button type="button" className="secondary-button" onClick={() => onEditInstallation(installation)}>

@@ -54,22 +54,16 @@ export type InstallationTechnicalData = {
   hmi?: string
   mqtt?: boolean
   modbus?: boolean
-  sensors?: number
-  actuators?: number
+  sensors?: string[]
+  actuators?: string[]
   powerLevel?: string
 }
 
 export type InstallationRealtimeCurrent = {
-  updatedAt?: string
-  connectivity?: 'online' | 'offline' | 'degraded'
-  values?: Record<string, number | string | boolean | null>
-  alarms?: Array<{
-    code: string
-    message: string
-    severity: 'low' | 'medium' | 'high' | 'critical'
-    active: boolean
-    detectedAt?: string
-  }>
+  connected?: boolean
+  lastTelemetryAt?: string
+  activeAlarms?: number
+  status?: string
 }
 
 export type Installation = {
@@ -90,6 +84,10 @@ export type Installation = {
   createdBy?: string
 }
 
+export type CreateInstallationPayload = Omit<Installation, 'id' | 'createdAt'> & {
+  realtimeCurrent?: InstallationRealtimeCurrent
+}
+
 export type CreateInstallationPayload = Omit<Installation, 'id' | 'createdAt'>
 
 export type UpdateInstallationPayload = CreateInstallationPayload & {
@@ -97,12 +95,21 @@ export type UpdateInstallationPayload = CreateInstallationPayload & {
 }
 
 export const DEFAULT_INSTALLATION_CAPABILITIES: InstallationCapabilities = {
-  telemetry: false,
-  alarms: false,
+  telemetry: true,
+  alarms: true,
   remoteControl: false,
-  trends: false,
-  notifications: false,
+  trends: true,
+  notifications: true,
 }
 
-export const DEFAULT_INSTALLATION_CATEGORY: InstallationCategory = 'custom'
-export const DEFAULT_INSTALLATION_TYPE: InstallationType = 'custom'
+export function formatInstallationLocation(location?: InstallationLocation): string {
+  if (!location) {
+    return 'Sin ubicación'
+  }
+
+  const parts = [location.plant, location.area, location.comuna, location.region, location.address].filter(
+    (value): value is string => Boolean(value?.trim()),
+  )
+
+  return parts.length > 0 ? parts.join(', ') : 'Sin ubicación'
+}

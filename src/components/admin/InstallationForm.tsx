@@ -2,14 +2,23 @@ import { useMemo, useState, type FormEvent } from 'react'
 import type { Company } from '../../types/companies'
 import {
   DEFAULT_INSTALLATION_CAPABILITIES,
-  DEFAULT_INSTALLATION_CATEGORY,
-  DEFAULT_INSTALLATION_TYPE,
   INSTALLATION_CATEGORIES,
   INSTALLATION_TYPES,
   type CreateInstallationPayload,
 } from '../../types/installations'
 
-export type InstallationFormValues = CreateInstallationPayload
+export type InstallationFormValues = {
+  name: string
+  companyId: string
+  companyName: string
+  category: CreateInstallationPayload['category']
+  type: CreateInstallationPayload['type']
+  subtype: string
+  location: string
+  description: string
+  active: boolean
+  clientVisible: boolean
+}
 
 type InstallationFormProps = {
   companies: Company[]
@@ -18,7 +27,7 @@ type InstallationFormProps = {
   serverError?: string | null
   submitLabel?: string
   onCancel: () => void
-  onSubmit: (values: InstallationFormValues) => Promise<void>
+  onSubmit: (values: CreateInstallationPayload) => Promise<void>
 }
 
 type InstallationFormErrors = Partial<Record<'name' | 'companyId' | 'type' | 'locationAddress', string>>
@@ -27,11 +36,13 @@ const INITIAL_VALUES: InstallationFormValues = {
   name: '',
   companyId: '',
   companyName: '',
-  category: DEFAULT_INSTALLATION_CATEGORY,
-  type: DEFAULT_INSTALLATION_TYPE,
+  category: 'custom',
+  type: 'custom',
+  subtype: '',
+  location: '',
+  description: '',
   active: true,
   clientVisible: true,
-  capabilities: DEFAULT_INSTALLATION_CAPABILITIES,
 }
 
 function normalizeValues(defaultValues?: Partial<InstallationFormValues>): InstallationFormValues {
@@ -104,12 +115,16 @@ export function InstallationForm({
       name: values.name.trim(),
       companyId: values.companyId,
       companyName: selectedCompany?.name ?? values.companyName,
-      subtype: values.subtype?.trim(),
-      description: values.description?.trim(),
+      category: values.category,
+      type: values.type,
+      subtype: values.subtype.trim() || undefined,
       location: {
-        ...values.location,
-        address: values.location?.address?.trim(),
+        address: values.location.trim(),
       },
+      description: values.description.trim() || undefined,
+      active: values.active,
+      clientVisible: values.clientVisible,
+      capabilities: DEFAULT_INSTALLATION_CAPABILITIES,
     })
   }
 
@@ -170,16 +185,6 @@ export function InstallationForm({
       </label>
 
       <label>
-        Subtipo
-        <input
-          type="text"
-          value={values.subtype ?? ''}
-          onChange={(event) => setValues((current) => ({ ...current, subtype: event.target.value }))}
-          placeholder="custom subtype"
-        />
-      </label>
-
-      <label>
         Ubicación
         <input
           type="text"
@@ -196,6 +201,25 @@ export function InstallationForm({
           placeholder="Quilicura, RM"
         />
         {errors.locationAddress ? <span className="form-error">{errors.locationAddress}</span> : null}
+      </label>
+
+      <label>
+        Subtipo (opcional)
+        <input
+          type="text"
+          value={values.subtype}
+          onChange={(event) => setValues((current) => ({ ...current, subtype: event.target.value }))}
+          placeholder="Ej: Sala de bombas principal"
+        />
+      </label>
+
+      <label>
+        Descripción (opcional)
+        <textarea
+          value={values.description}
+          onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
+          placeholder="Detalle funcional de la instalación"
+        />
       </label>
 
       <label>
@@ -228,6 +252,14 @@ export function InstallationForm({
           onChange={(event) => setValues((current) => ({ ...current, active: event.target.checked }))}
         />
         Activa
+      </label>
+      <label className="user-form-checkbox">
+        <input
+          type="checkbox"
+          checked={values.clientVisible}
+          onChange={(event) => setValues((current) => ({ ...current, clientVisible: event.target.checked }))}
+        />
+        Visible para cliente
       </label>
 
       <label className="user-form-checkbox">
