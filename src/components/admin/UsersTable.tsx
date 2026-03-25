@@ -6,13 +6,13 @@ type UsersTableProps = {
 }
 
 const ROLE_LABELS: Record<UserProfile['role'], string> = {
-  platform_admin: 'Platform Admin',
-  client_user: 'Cliente',
+  platform_admin: 'Administrador global',
+  client_user: 'Usuario cliente',
 }
 
 const CLIENT_ROLE_LABELS: Record<UserProfile['clientRole'], string> = {
-  client_admin: 'Client Admin',
-  client_monitor: 'Client Monitor',
+  client_admin: 'Administrador cliente',
+  client_monitor: 'Monitor cliente',
 }
 
 export function UsersTable({ users, onEditUser }: UsersTableProps) {

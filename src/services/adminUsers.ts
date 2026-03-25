@@ -1,4 +1,4 @@
-import { doc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, updateDoc, where, query } from 'firebase/firestore'
 import type { UserProfile } from '../hooks/useAuth'
 import { db } from './firebase'
 import type { CreateUserPayload } from '../types/adminUsers'
@@ -34,7 +34,22 @@ async function mockCreateUser(payload: CreateUserRequest): Promise<CreateUserRes
   }
 }
 
+async function hasAnotherPlatformAdmin(excludeUid?: string): Promise<boolean> {
+  const usersQuery = query(collection(db, 'users'), where('role', '==', 'platform_admin'))
+  const snapshot = await getDocs(usersQuery)
+
+  if (!excludeUid) {
+    return !snapshot.empty
+  }
+
+  return (snapshot.docs as Array<{ id: string }>).some((userDocument) => userDocument.id !== excludeUid)
+}
+
 export async function createAdminUser(payload: CreateUserRequest): Promise<CreateUserResponse> {
+  if (payload.role === 'platform_admin' && (await hasAnotherPlatformAdmin())) {
+    throw new Error('Solo se permite un administrador global en Enerflux.')
+  }
+
   if (CREATE_USER_MODE === 'mock') {
     return mockCreateUser(payload)
   }
@@ -86,6 +101,10 @@ type UpdateAdminUserInput = {
 }
 
 export async function updateAdminUser(input: UpdateAdminUserInput): Promise<void> {
+  if (input.role === 'platform_admin' && (await hasAnotherPlatformAdmin(input.uid))) {
+    throw new Error('Solo se permite un administrador global en Enerflux.')
+  }
+
   const reference = doc(db, 'users', input.uid)
 
   await updateDoc(reference, {
