@@ -56,6 +56,9 @@ export const INSTALLATION_TYPES: InstallationType[] = [
   'custom',
 ]
 
+export const DEFAULT_INSTALLATION_CATEGORY: InstallationCategory = 'custom'
+export const DEFAULT_INSTALLATION_TYPE: InstallationType = 'custom'
+
 export const INSTALLATION_CATEGORY_LABELS: Record<InstallationCategory, string> = {
   power_system: 'Sistema de potencia',
   pumping_system: 'Sistema de bombeo',

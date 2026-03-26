@@ -2,9 +2,12 @@ import { useMemo, useState, type FormEvent } from 'react'
 import type { Company } from '../../types/companies'
 import {
   DEFAULT_INSTALLATION_CAPABILITIES,
+  DEFAULT_INSTALLATION_CATEGORY,
+  DEFAULT_INSTALLATION_TYPE,
   INSTALLATION_CATEGORIES,
   INSTALLATION_TYPES,
   type CreateInstallationPayload,
+  type InstallationCapabilities,
 } from '../../types/installations'
 
 export type InstallationFormValues = {
@@ -18,6 +21,7 @@ export type InstallationFormValues = {
   description: string
   active: boolean
   clientVisible: boolean
+  capabilities: InstallationCapabilities
 }
 
 type InstallationFormProps = {
@@ -36,26 +40,29 @@ const INITIAL_VALUES: InstallationFormValues = {
   name: '',
   companyId: '',
   companyName: '',
-  category: 'custom',
-  type: 'custom',
+  category: DEFAULT_INSTALLATION_CATEGORY,
+  type: DEFAULT_INSTALLATION_TYPE,
   subtype: '',
   location: '',
   description: '',
   active: true,
   clientVisible: true,
+  capabilities: DEFAULT_INSTALLATION_CAPABILITIES,
 }
 
 function normalizeValues(defaultValues?: Partial<InstallationFormValues>): InstallationFormValues {
   return {
-    ...INITIAL_VALUES,
-    ...defaultValues,
+    name: defaultValues?.name ?? INITIAL_VALUES.name,
+    companyId: defaultValues?.companyId ?? INITIAL_VALUES.companyId,
+    companyName: defaultValues?.companyName ?? INITIAL_VALUES.companyName,
     category: defaultValues?.category ?? DEFAULT_INSTALLATION_CATEGORY,
     type: defaultValues?.type ?? DEFAULT_INSTALLATION_TYPE,
-    clientVisible: defaultValues?.clientVisible ?? true,
-    capabilities: {
-      ...DEFAULT_INSTALLATION_CAPABILITIES,
-      ...defaultValues?.capabilities,
-    },
+    subtype: defaultValues?.subtype ?? INITIAL_VALUES.subtype,
+    location: defaultValues?.location ?? INITIAL_VALUES.location,
+    description: defaultValues?.description ?? INITIAL_VALUES.description,
+    active: defaultValues?.active ?? INITIAL_VALUES.active,
+    clientVisible: defaultValues?.clientVisible ?? INITIAL_VALUES.clientVisible,
+    capabilities: defaultValues?.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES,
   }
 }
 
@@ -70,7 +77,7 @@ function validate(values: InstallationFormValues, companies: Company[]): Install
     errors.type = 'El tipo es obligatorio.'
   }
 
-  if (!(values.location?.address?.trim())) {
+  if (!values.location.trim()) {
     errors.locationAddress = 'La ubicación es obligatoria.'
   }
 
@@ -115,8 +122,8 @@ export function InstallationForm({
       name: values.name.trim(),
       companyId: values.companyId,
       companyName: selectedCompany?.name ?? values.companyName,
-      category: values.category,
-      type: values.type,
+      category: values.category ?? DEFAULT_INSTALLATION_CATEGORY,
+      type: values.type ?? DEFAULT_INSTALLATION_TYPE,
       subtype: values.subtype.trim() || undefined,
       location: {
         address: values.location.trim(),
@@ -124,7 +131,7 @@ export function InstallationForm({
       description: values.description.trim() || undefined,
       active: values.active,
       clientVisible: values.clientVisible,
-      capabilities: DEFAULT_INSTALLATION_CAPABILITIES,
+      capabilities: values.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES,
     })
   }
 
@@ -188,14 +195,11 @@ export function InstallationForm({
         Ubicación
         <input
           type="text"
-          value={values.location?.address ?? ''}
+          value={values.location}
           onChange={(event) =>
             setValues((current) => ({
               ...current,
-              location: {
-                ...current.location,
-                address: event.target.value,
-              },
+              location: event.target.value,
             }))
           }
           placeholder="Quilicura, RM"
@@ -214,11 +218,12 @@ export function InstallationForm({
       </label>
 
       <label>
-        Descripción (opcional)
+        Descripción
         <textarea
           value={values.description}
           onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
-          placeholder="Detalle funcional de la instalación"
+          placeholder="Descripción técnica de la instalación"
+          rows={3}
         />
       </label>
 
@@ -235,16 +240,6 @@ export function InstallationForm({
         {errors.companyId ? <span className="form-error">{errors.companyId}</span> : null}
       </label>
 
-      <label>
-        Descripción
-        <textarea
-          value={values.description ?? ''}
-          onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
-          placeholder="Descripción técnica de la instalación"
-          rows={3}
-        />
-      </label>
-
       <label className="user-form-checkbox">
         <input
           type="checkbox"
@@ -253,15 +248,6 @@ export function InstallationForm({
         />
         Activa
       </label>
-      <label className="user-form-checkbox">
-        <input
-          type="checkbox"
-          checked={values.clientVisible}
-          onChange={(event) => setValues((current) => ({ ...current, clientVisible: event.target.checked }))}
-        />
-        Visible para cliente
-      </label>
-
       <label className="user-form-checkbox">
         <input
           type="checkbox"

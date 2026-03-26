@@ -15,6 +15,8 @@ import {
 } from 'firebase/firestore'
 import {
   DEFAULT_INSTALLATION_CAPABILITIES,
+  DEFAULT_INSTALLATION_CATEGORY,
+  DEFAULT_INSTALLATION_TYPE,
   formatInstallationLocation,
   type CreateInstallationPayload,
   type Installation,
@@ -71,8 +73,8 @@ function normalizeInstallation(document: QueryDocumentSnapshot): Installation {
     name: data.name ?? 'Sin nombre',
     companyId: data.companyId ?? '',
     companyName: data.companyName ?? 'Sin empresa',
-    category: data.category ?? 'custom',
-    type: data.type ?? 'custom',
+    category: data.category ?? DEFAULT_INSTALLATION_CATEGORY,
+    type: data.type ?? DEFAULT_INSTALLATION_TYPE,
     subtype: data.subtype ?? undefined,
     location: data.location ?? undefined,
     description: data.description ?? undefined,
