@@ -6,7 +6,6 @@ import {
   getDocs,
   orderBy,
   query,
-  setDoc,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -19,6 +18,7 @@ import {
   formatInstallationLocation,
   type CreateInstallationPayload,
   type Installation,
+  type InstallationCapabilities,
   type InstallationCategory,
   type InstallationRealtimeCurrent,
   type InstallationType,
@@ -32,15 +32,15 @@ type InstallationDocument = Partial<{
   companyName: string
   category: InstallationCategory
   type: InstallationType
-  subtype: string
-  location: Installation['location']
-  description: string
+  subtype: string | null
+  location: Installation['location'] | null
+  description: string | null
   active: boolean
   clientVisible: boolean
-  capabilities: Installation['capabilities']
-  technical: Installation['technical']
+  capabilities: InstallationCapabilities
+  technical: Installation['technical'] | null
   createdAt: Timestamp
-  createdBy: string
+  createdBy: string | null
 }>
 
 function formatCreatedAt(createdAt: Timestamp | null | undefined): string | undefined {
@@ -73,19 +73,27 @@ function normalizeInstallation(document: QueryDocumentSnapshot): Installation {
     companyName: data.companyName ?? 'Sin empresa',
     category: data.category ?? 'custom',
     type: data.type ?? 'custom',
-    subtype: data.subtype,
-    location: data.location,
-    description: data.description,
+    subtype: data.subtype ?? undefined,
+    location: data.location ?? undefined,
+    description: data.description ?? undefined,
     active: data.active === true,
     clientVisible: data.clientVisible !== false,
-    capabilities: data.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES,
-    technical: data.technical,
+    capabilities: normalizeCapabilities(data.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES),
+    technical: data.technical ?? undefined,
     createdAt: formatCreatedAt(data.createdAt),
-    createdBy: data.createdBy,
+    createdBy: data.createdBy ?? undefined,
   }
 }
 
-function assertValidPayload(payload: { companyId: string; companyName: string }) {
+function assertValidPayload(payload: {
+  name?: string
+  companyId: string
+  companyName: string
+}) {
+  if (!payload.name?.trim()) {
+    throw new Error('El nombre de la instalación es obligatorio.')
+  }
+
   if (!payload.companyId.trim()) {
     throw new Error('La instalación debe estar asociada a una empresa.')
   }
@@ -119,8 +127,11 @@ export async function listInstallationsByCompanyId(companyId: string): Promise<I
   return snapshot.docs.map(normalizeInstallation)
 }
 
-export async function createInstallation(payload: CreateInstallationPayload): Promise<Installation> {
+export async function createInstallation(
+  payload: CreateInstallationPayload,
+): Promise<Installation> {
   assertValidPayload(payload)
+
   const normalizedName = payload.name.trim()
   const normalizedCompanyId = payload.companyId.trim()
   const normalizedCompanyName = payload.companyName.trim()
@@ -134,13 +145,15 @@ export async function createInstallation(payload: CreateInstallationPayload): Pr
     companyName: normalizedCompanyName,
     category: payload.category,
     type: payload.type,
-    subtype: normalizedSubtype,
-    location: payload.location,
-    description: normalizedDescription,
+    subtype: normalizedSubtype ?? null,
+    location: payload.location ?? null,
+    description: normalizedDescription ?? null,
     active: payload.active,
     clientVisible: payload.clientVisible,
-    capabilities: payload.capabilities,
-    technical: payload.technical,
+    capabilities: normalizeCapabilities(
+      payload.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES,
+    ),
+    technical: payload.technical ?? null,
     createdBy: normalizedCreatedBy,
     createdAt: serverTimestamp(),
   })
@@ -149,22 +162,8 @@ export async function createInstallation(payload: CreateInstallationPayload): Pr
 
   const snapshot = await getDoc(reference)
 
-  return {
-    id: reference.id,
-    name: data?.name ?? normalizedName,
-    companyId: data?.companyId ?? normalizedCompanyId,
-    companyName: data?.companyName ?? normalizedCompanyName,
-    category: data?.category ?? payload.category,
-    type: data?.type ?? payload.type,
-    subtype: data?.subtype ?? normalizedSubtype,
-    location: data?.location ?? payload.location,
-    description: data?.description ?? normalizedDescription,
-    active: data?.active ?? payload.active,
-    clientVisible: data?.clientVisible ?? payload.clientVisible,
-    capabilities: data?.capabilities ?? payload.capabilities,
-    technical: data?.technical ?? payload.technical,
-    createdAt: formatCreatedAt(data?.createdAt),
-    createdBy: data?.createdBy ?? normalizedCreatedBy,
+  if (!snapshot.exists()) {
+    throw new Error('No fue posible recuperar la instalación recién creada.')
   }
 
   return normalizeInstallation(snapshot as QueryDocumentSnapshot)
@@ -173,7 +172,12 @@ export async function createInstallation(payload: CreateInstallationPayload): Pr
 export async function updateInstallation(payload: UpdateInstallationPayload): Promise<void> {
   assertValidPayload(payload)
 
-  const reference = doc(db, 'installations', payload.id)
+  if (typeof payload.id !== 'string' || !payload.id.trim()) {
+    throw new Error('El id de la instalación es obligatorio para actualizar.')
+  }
+
+  const installationId = payload.id.trim()
+  const reference = doc(db, 'installations', installationId)
 
   await updateDoc(reference, {
     name: payload.name.trim(),
@@ -186,14 +190,25 @@ export async function updateInstallation(payload: UpdateInstallationPayload): Pr
     description: payload.description?.trim() || null,
     active: payload.active,
     clientVisible: payload.clientVisible,
-    capabilities: payload.capabilities,
+    capabilities: normalizeCapabilities(
+      payload.capabilities ?? DEFAULT_INSTALLATION_CAPABILITIES,
+    ),
     technical: payload.technical ?? null,
     createdBy: payload.createdBy?.trim() || null,
   })
 }
 
-export async function setRealtimeCurrentBase(installationId: string, current?: InstallationRealtimeCurrent): Promise<void> {
-  await setDoc(doc(db, 'installations', installationId, 'realtime', 'current'), {
+export async function setRealtimeCurrentBase(
+  installationId: string,
+  current?: InstallationRealtimeCurrent,
+): Promise<void> {
+  const normalizedInstallationId = installationId.trim()
+
+  if (!normalizedInstallationId) {
+    throw new Error('El id de la instalación es obligatorio para crear el estado realtime.')
+  }
+
+  await setDoc(doc(db, 'installations', normalizedInstallationId, 'realtime', 'current'), {
     connected: current?.connected ?? false,
     lastTelemetryAt: current?.lastTelemetryAt ?? null,
     activeAlarms: current?.activeAlarms ?? 0,
